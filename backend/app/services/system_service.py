@@ -38,7 +38,7 @@ FEATURES: list[FeatureInfo] = [
     FeatureInfo(
         id="scheme-discovery",
         name="Scheme discovery",
-        status="next",
+        status="live",
         milestone="Day 2",
         description=(
             "Searchable, categorised scheme records with benefits, "
@@ -48,7 +48,7 @@ FEATURES: list[FeatureInfo] = [
     FeatureInfo(
         id="eligibility",
         name="Eligibility checker",
-        status="next",
+        status="live",
         milestone="Day 2",
         description=(
             "Deterministic, rule-by-rule eligibility evaluation with a "
@@ -72,7 +72,7 @@ FEATURES: list[FeatureInfo] = [
         milestone="Day 4",
         description=(
             "Gemini-powered answers grounded in retrieved evidence, in "
-            "English and Malayalam, with an honest 'not found' state."
+            "English, Malayalam and Hindi, with an honest 'not found' state."
         ),
     ),
     FeatureInfo(
@@ -90,6 +90,7 @@ FEATURES: list[FeatureInfo] = [
 LANGUAGES: list[LanguageInfo] = [
     LanguageInfo(code="en", label="English", native_label="English"),
     LanguageInfo(code="ml", label="Malayalam", native_label="മലയാളം"),
+    LanguageInfo(code="hi", label="Hindi", native_label="हिन्दी"),
 ]
 
 
@@ -137,7 +138,9 @@ def _credential_check(
     )
 
 
-def build_readiness(settings: Settings, repository: SchemeRepository) -> ReadinessResponse:
+def build_readiness(
+    settings: Settings, repository: SchemeRepository
+) -> ReadinessResponse:
     """Report which dependencies are available and which are planned."""
     checks = [
         ReadinessCheck(
@@ -151,8 +154,11 @@ def build_readiness(settings: Settings, repository: SchemeRepository) -> Readine
             check_id="supabase",
             label="Supabase PostgreSQL",
             configured=settings.supabase_configured,
-            pending_detail="Credentials detected — integration scheduled for Day 2.",
-            missing_detail="Credentials not set. Using the local JSON provider.",
+            pending_detail=(
+                "Credentials detected — Supabase integration is deferred; "
+                "the validated JSON repository is active."
+            ),
+            missing_detail=("Not configured. The validated JSON repository is active."),
         ),
         _credential_check(
             check_id="gemini",
