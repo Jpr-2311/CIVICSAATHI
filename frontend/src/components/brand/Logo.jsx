@@ -39,34 +39,33 @@ export default function Logo({
       className={cn('inline-flex items-center gap-2.5', className)}
       aria-label="CIVICSAATHI AI home"
     >
-      <span className="relative grid h-9 w-9 place-items-center overflow-hidden rounded-[11px] bg-gradient-to-br from-brand-400 via-brand-600 to-brand-800 ring-1 ring-inset ring-white/25 shadow-[0_6px_16px_-8px_rgba(20,126,121,0.9)]">
-        <ShieldMark className="h-[22px] w-[22px] text-white" />
+      <span
+        className={cn(
+          'relative grid h-9 w-9 place-items-center rounded-xl sm:h-10 sm:w-10 sm:rounded-[13px]',
+          isLight ? 'bg-cream-50' : 'bg-brand-950',
+        )}
+      >
+        <ShieldMark
+          className={cn(
+            'h-5 w-5 sm:h-[22px] sm:w-[22px]',
+            isLight ? 'text-brand-950' : 'text-cream-50',
+          )}
+        />
+        <span
+          className={cn(
+            'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-coral-500 ring-2',
+            isLight ? 'ring-brand-950' : 'ring-cream-50',
+          )}
+          aria-hidden="true"
+        />
       </span>
       {showWordmark ? (
-        <span className="flex flex-col leading-none">
-          <span
-            className={cn(
-              'text-[14px] font-semibold tracking-[0.01em]',
-              isLight ? 'text-white' : 'text-ink-950',
-            )}
-          >
-            CIVICSAATHI{' '}
-            <span
-              className={cn(
-                'font-normal',
-                isLight ? 'text-brand-300' : 'text-brand-600',
-              )}
-            >
-              AI
-            </span>
+        <span className="flex items-baseline gap-1 text-[14px] font-semibold tracking-[0.07em] leading-none sm:text-[15px] sm:tracking-[0.08em]">
+          <span className={isLight ? 'text-cream-50' : 'text-brand-950'}>
+            CIVICSAATHI
           </span>
-          <span
-            className={cn(
-              'mt-1 text-[9px] font-medium uppercase tracking-[0.22em]',
-              isLight ? 'text-ink-400' : 'text-ink-400',
-            )}
-          >
-            Civic intelligence
+          <span className={isLight ? 'text-coral-300' : 'text-coral-600'}>
+            AI
           </span>
         </span>
       ) : null}

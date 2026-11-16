@@ -6,35 +6,64 @@
   --font-display: "Instrument Serif", "Iowan Old Style", Georgia,
     "Times New Roman", serif;
   --font-malayalam: "Noto Sans Malayalam", "Nirmala UI", "Kartika", sans-serif;
+  --font-hindi: "Noto Sans Devanagari", "Nirmala UI", "Mangal", sans-serif;
 
-  --color-ink-50: #f5f7fa;
-  --color-ink-100: #e9eef5;
-  --color-ink-200: #d3dde9;
-  --color-ink-300: #aebfd2;
-  --color-ink-400: #8299b4;
-  --color-ink-500: #617a98;
-  --color-ink-600: #4a617c;
-  --color-ink-700: #354961;
-  --color-ink-800: #22334a;
-  --color-ink-900: #142334;
-  --color-ink-950: #0a1523;
+  --color-cream-50: #fbf8f2;
+  --color-cream-100: #f6f0e6;
+  --color-cream-200: #ede4d7;
+  --color-cream-300: #e1d3c1;
+  --color-cream-400: #d0bda6;
 
-  --color-brand-50: #ebfaf7;
-  --color-brand-100: #d0f4ed;
-  --color-brand-200: #a3e8de;
-  --color-brand-300: #6dd5c9;
-  --color-brand-400: #3ab9af;
-  --color-brand-500: #1f9d95;
-  --color-brand-600: #147e79;
-  --color-brand-700: #126561;
-  --color-brand-800: #13514f;
-  --color-brand-900: #134341;
-  --color-brand-950: #062826;
+  --color-ink-50: #faf7f1;
+  --color-ink-100: #f1ebe1;
+  --color-ink-200: #e4dacd;
+  --color-ink-300: #cfc1b1;
+  --color-ink-400: #b0a090;
+  --color-ink-500: #8c7d6e;
+  --color-ink-600: #6f6254;
+  --color-ink-700: #574c41;
+  --color-ink-800: #3f372f;
+  --color-ink-900: #2d2721;
+  --color-ink-950: #1d1915;
 
-  --shadow-soft: 0 1px 2px rgba(10, 21, 35, 0.04),
-    0 12px 32px -16px rgba(10, 21, 35, 0.18);
-  --shadow-lift: 0 2px 4px rgba(10, 21, 35, 0.05),
-    0 24px 60px -24px rgba(10, 21, 35, 0.28);
+  --color-brand-50: #f2f5f9;
+  --color-brand-100: #e5ebf3;
+  --color-brand-200: #c9d6e6;
+  --color-brand-300: #a2b8d1;
+  --color-brand-400: #7795b6;
+  --color-brand-500: #55779c;
+  --color-brand-600: #3f5f84;
+  --color-brand-700: #344d6c;
+  --color-brand-800: #2a3e57;
+  --color-brand-900: #1e3046;
+  --color-brand-950: #142235;
+
+  --color-coral-50: #fcf4ee;
+  --color-coral-100: #f9e7da;
+  --color-coral-200: #f2cdb8;
+  --color-coral-300: #e7ac8f;
+  --color-coral-400: #d98765;
+  --color-coral-500: #c96b46;
+  --color-coral-600: #b45534;
+  --color-coral-700: #95442c;
+  --color-coral-800: #783a29;
+  --color-coral-900: #623225;
+
+  --color-teal-50: #eef7f3;
+  --color-teal-100: #daece6;
+  --color-teal-200: #b6ddd0;
+  --color-teal-300: #89c5b3;
+  --color-teal-400: #57a791;
+  --color-teal-500: #378b76;
+  --color-teal-600: #2a705f;
+  --color-teal-700: #245a4e;
+  --color-teal-800: #204940;
+  --color-teal-900: #1c3d36;
+
+  --shadow-soft: 0 1px 2px rgba(45, 39, 33, 0.03),
+    0 18px 40px -24px rgba(45, 39, 33, 0.16);
+  --shadow-lift: 0 2px 4px rgba(45, 39, 33, 0.04),
+    0 30px 70px -36px rgba(20, 34, 53, 0.28);
 }
 
 @layer base {
@@ -44,15 +73,25 @@
   }
 
   body {
-    @apply bg-ink-50 font-sans text-ink-700 antialiased;
+    @apply bg-cream-50 font-sans text-ink-700 antialiased;
     margin: 0;
+  }
+
+  html[lang="ml"] body {
+    font-family: var(--font-malayalam);
+    overflow-wrap: anywhere;
+  }
+
+  html[lang="hi"] body {
+    font-family: var(--font-hindi);
+    overflow-wrap: anywhere;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply text-ink-900;
+    @apply text-brand-950;
     text-wrap: balance;
   }
 
@@ -61,71 +100,17 @@
   }
 
   ::selection {
-    background-color: var(--color-brand-200);
-    color: var(--color-ink-950);
+    background-color: var(--color-teal-200);
+    color: var(--color-brand-950);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brand-500);
+    outline: 2px solid var(--color-coral-500);
     outline-offset: 2px;
   }
 
   button:disabled {
     cursor: not-allowed;
-  }
-}
-
-@layer utilities {
-  .bg-hero {
-    background:
-      radial-gradient(
-        1100px 560px at 12% -8%,
-        rgba(31, 157, 149, 0.28),
-        transparent 62%
-      ),
-      radial-gradient(
-        900px 480px at 94% 6%,
-        rgba(37, 99, 235, 0.2),
-        transparent 58%
-      ),
-      var(--color-ink-950);
-  }
-
-  .hero-grid {
-    background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(
-      ellipse 80% 70% at 50% 35%,
-      black 30%,
-      transparent 78%
-    );
-  }
-
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes soft-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
   }
 }
 
@@ -140,24 +125,35 @@
   }
 }
 
-.reveal {
-  animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+/*
+ * These live in the utilities layer because Tailwind's own `.font-display`
+ * and `.italic` utilities would otherwise win over base-layer overrides.
+ */
+@layer utilities {
+  html[lang="ml"] .font-display,
+  html[lang="hi"] .font-display {
+    font-style: normal;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
 
-.reveal-delay-1 {
-  animation-delay: 0.08s;
-}
+  html[lang="ml"] .font-display {
+    font-family: var(--font-malayalam);
+  }
 
-.reveal-delay-2 {
-  animation-delay: 0.16s;
-}
+  html[lang="hi"] .font-display {
+    font-family: var(--font-hindi);
+  }
 
-.float-soft {
-  animation: soft-float 8s ease-in-out infinite;
+  /* Indic scripts have no italics; avoid synthetic obliques. */
+  html[lang="ml"] .italic,
+  html[lang="hi"] .italic {
+    font-style: normal;
+  }
 }
 
 .fade-swap {
-  animation: fade-swap 0.25s ease both;
+  animation: fade-swap 0.22s ease both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -165,8 +161,6 @@
     scroll-behavior: auto;
   }
 
-  .reveal,
-  .float-soft,
   .fade-swap {
     animation: none !important;
   }

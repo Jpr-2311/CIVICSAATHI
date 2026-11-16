@@ -1,9 +1,9 @@
 import { cn } from '@/lib/cn'
 
 const TONES = {
-  ok: 'text-emerald-500',
-  ready: 'text-emerald-500',
-  online: 'text-emerald-500',
+  ok: 'text-teal-500',
+  ready: 'text-teal-500',
+  online: 'text-teal-500',
   pending: 'text-amber-500',
   loading: 'text-ink-300',
   not_configured: 'text-ink-400',

@@ -2,9 +2,10 @@
 
 React + Vite workspace for the CIVICSAATHI AI civic intelligence assistant.
 
-The Day 1 frontend includes the public landing page, the workspace shell, a
-live telemetry dashboard and honest preview pages for modules that arrive on
-later days.
+The Day 1 frontend includes a trilingual public landing page, the workspace
+shell, a live telemetry dashboard and honest previews for the modules that
+arrive on later days. English, Malayalam and Hindi share one interface and one
+route structure.
 
 ## Stack
 
@@ -13,6 +14,7 @@ later days.
 - React Router 7
 - Axios with normalized errors
 - Lucide icons
+- Custom lightweight i18n (no runtime dependency)
 - Oxlint for static checks
 
 ## Setup
@@ -60,6 +62,18 @@ the browser bundle.
 
 Unknown `/app/*` routes render the 404 page with a route back to the dashboard.
 
+## Languages
+
+The interface ships in English (`en`), Malayalam (`ml`) and Hindi (`hi`).
+`LanguageProvider` persists the choice in `localStorage` under
+`civicsaathi.language`, updates `<html lang>`, the document title and the meta
+description, and falls back to English when the stored value is unknown.
+
+Catalogs live in `src/i18n/messages/`. The English file is the canonical key
+schema; add a key to all three catalogs and read it with
+`useLanguage().t('flat.key')` or `useMessages()` for structured copy. Indic
+scripts use their own display fonts, never synthetic italics.
+
 ## Structure
 
 ```text
@@ -73,20 +87,30 @@ src/
 │   ├── marketing/
 │   │   ├── SiteHeader.jsx         # Sticky marketing header + mobile menu
 │   │   ├── SiteFooter.jsx
-│   │   └── AnswerPreview.jsx      # Interactive EN/ML illustrative answer
-│   └── ui/                        # Button, Card, Badge, Skeleton, etc.
-├── data/modules.js                # Module copy, status and endpoints
+│   │   └── AnswerPreview.jsx      # Interactive EN/ML/HI illustrative answer
+│   ├── ui/                        # Button, Card, Badge, Skeleton, etc.
+│   └── workspace/ModuleHeader.jsx # Shared preview-page header
+├── data/modules.js                # Module status and endpoints
 ├── hooks/useSystemSnapshot.js     # API polling and request state
+├── i18n/
+│   ├── LanguageProvider.jsx       # Language state, interpolation, metadata
+│   ├── LanguageSwitcher.jsx       # Full and compact select variants
+│   ├── context.js                 # React context and hooks
+│   ├── languages.js               # Codes, native labels, short labels
+│   └── messages/                  # en.js, ml.js, hi.js, index.js
 ├── lib/cn.js                      # Conditional class helper
 ├── pages/
 │   ├── LandingPage.jsx
 │   ├── DashboardPage.jsx
-│   ├── ModulePreviewPage.jsx
+│   ├── SchemesPage.jsx
+│   ├── EligibilityPage.jsx
+│   ├── DocumentsPage.jsx
+│   ├── AssistantPage.jsx
 │   └── NotFoundPage.jsx
 ├── services/api.js                # Axios instance and endpoint helpers
 ├── App.jsx                        # Route table
-├── main.jsx                       # BrowserRouter bootstrap
-└── index.css                      # Tailwind theme, fonts, animations
+├── main.jsx                       # BrowserRouter and language bootstrap
+└── index.css                      # Tailwind theme, fonts, wrapping rules
 ```
 
 ## API integration
@@ -110,16 +134,20 @@ refreshes immediately when the tab becomes visible again.
 
 Tokens are declared in `src/index.css` using Tailwind 4's `@theme`:
 
-- `ink-50` … `ink-950` for the civic navy palette.
-- `brand-50` … `brand-950` for the teal accent.
-- Instrument Serif for display headings, Inter for UI, Noto Sans Malayalam for
-  Malayalam text (`.font-malayalam`).
+- `cream-50` … `cream-400` for warm page and surface backgrounds.
+- `ink-50` … `ink-950` for warm neutral text and borders.
+- `brand-50` … `brand-950` for the deep navy primary.
+- `coral-50` … `coral-900` for muted accent and emphasis.
+- `teal-50` … `teal-900` for selected states, success and verified evidence.
+- Instrument Serif for Latin display headings, Inter for UI, and Noto Sans
+  Malayalam / Devanagari for those scripts at display and body sizes.
 - `shadow-soft` and `shadow-lift` elevation tokens.
-- Reduced-motion support disables reveal, float and fade animations.
 
-The layout is verified at 1440 px and 390 px. The workspace sidebar becomes an
-accessible drawer below `lg`, and the marketing header collapses to a menu
-button below `md`.
+The layout is verified at 1440 px, 390 px and 320 px in all three languages.
+The workspace sidebar becomes an accessible drawer below `lg`, and the marketing
+header collapses to a menu button below `md`. Script-aware `overflow-wrap`
+prevents long words from forcing horizontal scrolling, while headings are kept
+to word-boundary breaks where the copy allows it.
 
 ## Accessibility
 

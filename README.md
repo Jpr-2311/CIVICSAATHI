@@ -4,7 +4,7 @@
 
 A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
-into clear English and Malayalam answers that a citizen can verify.
+into clear, verifiable guidance in English, Malayalam or Hindi.
 
 > **Build status: Day 1 of 7 complete.** The foundation, landing page,
 > workspace dashboard and live FastAPI connection are working. Scheme
@@ -28,13 +28,13 @@ CIVICSAATHI AI takes the opposite approach:
 - **Official sources only** — no invented schemes, benefits or links.
 - **Answers carry evidence** — document name, page number and excerpt.
 - **Missing evidence is stated**, never filled in with a plausible guess.
-- **English and Malayalam** are treated as first-class languages.
+- **English, Malayalam and Hindi** are treated as first-class languages.
 
 ## What works today
 
 | Area | Day 1 state |
 | --- | --- |
-| Marketing site | Responsive landing page with bilingual answer preview, problem framing, workflow and trust sections |
+| Marketing site | Responsive landing page with trilingual answer preview, problem framing, workflow and trust sections |
 | Workspace | Dashboard shell, sidebar, mobile drawer, module previews, 404 page |
 | Live telemetry | API status, response time, readiness checks and product metadata polled every 30 seconds |
 | Backend | FastAPI app with typed settings, CORS, logging, lifespan state and a consistent error envelope |
@@ -98,7 +98,7 @@ labels. They do not pretend to be functional yet.
 
 Planned additions: Supabase PostgreSQL (Day 2), deterministic eligibility rules
 (Day 2), PyMuPDF + ChromaDB ingestion (Day 3), Gemini RAG with page citations
-(Day 4), bilingual polish and evaluation (Day 5–6), deployment (Day 7).
+(Day 4), trilingual polish and evaluation (Day 5–6), deployment (Day 7).
 
 Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
@@ -288,8 +288,8 @@ npm run build
 ```
 
 Current Day 1 result: **5/5 backend tests pass**, Ruff clean, Oxlint clean and
-the Vite production build completes. Screenshots were verified at 1440 px and
-390 px with zero horizontal overflow.
+the Vite production build completes. Screenshots were verified at 1440 px,
+390 px and 320 px in all three languages with zero horizontal overflow.
 
 ## Roadmap
 
@@ -298,8 +298,8 @@ the Vite production build completes. Screenshots were verified at 1440 px and
 | 1 | Foundation | Design system, routes, live API contract, health telemetry |
 | 2 | Schemes & eligibility | Curated source-linked catalogue, search, deterministic rules engine |
 | 3 | Document intelligence | PDF upload, extraction, chunking, embeddings, ChromaDB retrieval |
-| 4 | Evidence-backed assistant | Gemini RAG in English and Malayalam with page citations |
-| 5 | Bilingual journey | Full Malayalam interface and end-to-end UX polish |
+| 4 | Evidence-backed assistant | Gemini RAG in English, Malayalam and Hindi with page citations |
+| 5 | Trilingual journey | Full English, Malayalam and Hindi experience and end-to-end UX polish |
 | 6 | Hardening | Evaluation set, failure-mode tests, accessibility and performance |
 | 7 | Deploy & demo | Vercel + Render deployment, demo script, submission assets |
 

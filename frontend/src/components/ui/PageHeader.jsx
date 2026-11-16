@@ -10,21 +10,21 @@ export default function PageHeader({
   return (
     <div
       className={cn(
-        'flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between',
+        'flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between',
         className,
       )}
     >
       <div className="max-w-2xl">
         {eyebrow ? (
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">
+          <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-coral-700">
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="text-2xl font-semibold tracking-tight text-ink-950 sm:text-3xl">
+        <h1 className="font-display text-[2.15rem] leading-[1.05] text-brand-950 sm:text-[2.75rem]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 text-sm leading-relaxed text-ink-500">
+          <p className="mt-3 text-[15px] leading-relaxed text-ink-600">
             {description}
           </p>
         ) : null}
