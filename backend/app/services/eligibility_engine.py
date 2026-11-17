@@ -338,6 +338,6 @@ def profile_values(request: EligibilityRequest) -> dict[str, Any]:
     """Return only the allowlisted profile fields, never the raw request."""
     return {
         name: getattr(request, name)
-        for name in request.model_fields
+        for name in type(request).model_fields
         if name != "language"
     }

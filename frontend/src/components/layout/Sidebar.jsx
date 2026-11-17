@@ -28,7 +28,7 @@ export function SidebarPanel({ system, onNavigate, onClose }) {
   const status = system?.state.status
   const online = status === 'ready'
   const checking = status === 'loading'
-  const version = system?.state.health?.version ?? '0.1.0'
+  const version = system?.state.health?.version ?? '0.2.0'
 
   return (
     <div className="flex h-full flex-col bg-white">
@@ -136,7 +136,9 @@ export function SidebarPanel({ system, onNavigate, onClose }) {
                       )}
                     >
                       {t('common.dayLabel')} {module.day} ·{' '}
-                      {t('shell.preview')}
+                      {module.status === 'live'
+                        ? t('common.live')
+                        : t('shell.preview')}
                     </span>
                   </span>
                 </>

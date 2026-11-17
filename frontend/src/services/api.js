@@ -22,9 +22,20 @@ export class ApiError extends Error {
   }
 }
 
+export function isCanceled(error) {
+  return error instanceof ApiError && error.code === 'canceled'
+}
+
 /** Convert axios/network failures into messages a citizen can act on. */
 export function toApiError(error) {
   if (error instanceof ApiError) return error
+
+  if (axios.isCancel(error)) {
+    return new ApiError('This request was replaced by a newer one.', {
+      code: 'canceled',
+      cause: error,
+    })
+  }
 
   if (axios.isAxiosError(error)) {
     if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
@@ -62,25 +73,72 @@ export function toApiError(error) {
   )
 }
 
-async function get(path) {
+function toParams(params) {
+  if (!params) return undefined
+
+  return Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== '',
+    ),
+  )
+}
+
+async function request(path, { method = 'get', params, data, signal } = {}) {
   try {
-    const { data } = await api.get(path)
-    return data
+    const response = await api.request({
+      url: path,
+      method,
+      params: toParams(params),
+      data,
+      signal,
+    })
+    return response.data
   } catch (error) {
     throw toApiError(error)
   }
 }
 
 export function getHealth() {
-  return get(`${API_PREFIX}/health`)
+  return request(`${API_PREFIX}/health`)
 }
 
 export function getReadiness() {
-  return get(`${API_PREFIX}/health/readiness`)
+  return request(`${API_PREFIX}/health/readiness`)
 }
 
 export function getSystemInfo() {
-  return get(`${API_PREFIX}/system/info`)
+  return request(`${API_PREFIX}/system/info`)
+}
+
+/**
+ * Search the curated scheme catalogue.
+ *
+ * @param {{q?: string, category?: string, government_level?: string,
+ *          page?: number, page_size?: number, language?: string}} params
+ * @param {{signal?: AbortSignal}} options
+ */
+export function getSchemes(params = {}, options = {}) {
+  return request(`${API_PREFIX}/schemes`, {
+    params,
+    signal: options.signal,
+  })
+}
+
+/** Read one curated scheme by id. */
+export function getScheme(schemeId, params = {}, options = {}) {
+  return request(`${API_PREFIX}/schemes/${encodeURIComponent(schemeId)}`, {
+    params,
+    signal: options.signal,
+  })
+}
+
+/** Evaluate every curated scheme with the deterministic rules engine. */
+export function checkEligibility(profile, options = {}) {
+  return request(`${API_PREFIX}/eligibility/check`, {
+    method: 'post',
+    data: profile,
+    signal: options.signal,
+  })
 }
 
 export function apiDocsUrl() {

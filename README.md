@@ -6,10 +6,10 @@ A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
 into clear, verifiable guidance in English, Malayalam or Hindi.
 
-> **Build status: Day 1 of 7 complete.** The foundation, landing page,
-> workspace dashboard and live FastAPI connection are working. Scheme
-> discovery, eligibility, document intelligence and the RAG assistant are
-> clearly marked as upcoming rather than shipped as mocks.
+> **Build status: Day 2 of 7 complete.** The foundation, live telemetry, a
+> verified 15-scheme catalogue and a deterministic eligibility engine are
+> working. Document intelligence and the RAG assistant are clearly marked as
+> previews rather than shipped as mocks.
 
 Built for **NxtWave IDEA//FORGE — Civic Pulse track**.
 
@@ -26,30 +26,35 @@ CIVICSAATHI AI takes the opposite approach:
 
 - **Rules decide eligibility**, not a language model.
 - **Official sources only** — no invented schemes, benefits or links.
-- **Answers carry evidence** — document name, page number and excerpt.
+- **Every scheme carries provenance** — a source URL and a verification date.
 - **Missing evidence is stated**, never filled in with a plausible guess.
 - **English, Malayalam and Hindi** are treated as first-class languages.
 
 ## What works today
 
-| Area | Day 1 state |
+| Area | Day 2 state |
 | --- | --- |
 | Marketing site | Responsive landing page with trilingual answer preview, problem framing, workflow and trust sections |
-| Workspace | Dashboard shell, sidebar, mobile drawer, module previews, 404 page |
-| Live telemetry | API status, response time, readiness checks and product metadata polled every 30 seconds |
-| Backend | FastAPI app with typed settings, CORS, logging, lifespan state and a consistent error envelope |
-| Data layer | Read-only JSON scheme repository with an intentionally empty, valid dataset |
-| Failure states | Loading skeletons, offline banner, retry action and stale-data handling |
-| Quality | 5 backend tests passing; Ruff clean; Oxlint clean; production frontend build succeeds |
+| Workspace | Dashboard shell, sidebar, mobile drawer, live/preview labels, 404 page |
+| Scheme catalogue | Search, nine category filters, central/state filters, pagination, loading/empty/error states |
+| Scheme detail | Full verified record with benefits, documents, steps, conditions and official sources |
+| Eligibility | Optional 29-field form, tri-state answers, deterministic results and per-condition explanations |
+| Data layer | 15 curated schemes, 45 reusable conditions, all source-linked and validated by Pydantic |
+| Backend | FastAPI app with typed settings, CORS, logging, lifespan state and consistent error envelopes |
+| Failure states | Skeletons, offline banner, retry actions, 404 handling and stale-data protection |
+| Quality | 139 backend tests passing; Ruff clean; Oxlint clean; production frontend build succeeds |
 
-The four civic modules have polished preview pages with honest "Day 2/3/4"
-labels. They do not pretend to be functional yet.
+Document intelligence and the assistant remain clearly labelled previews. They
+do not pretend to be functional yet.
 
 ## Screenshots
 
 | Landing page | Workspace dashboard |
 | :---: | :---: |
 | [![Landing page](docs/screenshots/landing-desktop.png)](docs/screenshots/landing-desktop.png) | [![Workspace dashboard](docs/screenshots/dashboard-desktop.png)](docs/screenshots/dashboard-desktop.png) |
+
+These screenshots show the foundation shell. The live Day 2 catalogue and
+eligibility pages are available at `/app/schemes` and `/app/eligibility`.
 
 <details>
 <summary>Mobile views (390 px)</summary>
@@ -63,44 +68,51 @@ labels. They do not pretend to be functional yet.
 ## Architecture
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ Browser                                                     │
-│ React 19 · Vite 8 · Tailwind CSS 4 · React Router 7         │
-│                                                             │
-│  Landing page          Workspace shell                      │
-│  /                     /app                                 │
-│                        ├── /app/schemes       (Day 2)       │
-│                        ├── /app/eligibility   (Day 2)       │
-│                        ├── /app/documents     (Day 3)       │
-│                        └── /app/assistant     (Day 4)       │
-│                                                             │
-│  Axios client · 12 s timeout · error normalization          │
-│  30 s polling · loading / offline / stale states            │
-└───────────────────────────┬─────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ Browser                                                         │
+│ React 19 · Vite 8 · Tailwind CSS 4 · React Router 7             │
+│                                                                 │
+│  Landing page          Workspace shell                          │
+│  /                     /app                                     │
+│                        ├── /app/schemes          (live)         │
+│                        ├── /app/schemes/:id      (live)         │
+│                        ├── /app/eligibility      (live)         │
+│                        ├── /app/documents        (preview)      │
+│                        └── /app/assistant        (preview)      │
+│                                                                 │
+│  Axios client · cancellation · error normalization              │
+│  30 s polling · loading / empty / offline / stale states        │
+└───────────────────────────┬─────────────────────────────────────┘
                             │ JSON over HTTP
-┌───────────────────────────▼─────────────────────────────────┐
-│ FastAPI  ·  /api/v1                                         │
-│                                                             │
-│  GET /health                 liveness, no dependencies       │
-│  GET /health/readiness       dataset, DB, AI, vector store   │
-│  GET /system/info            languages, features, disclaimer │
-│                                                             │
-│  routes  →  services  →  repository / future integrations    │
-│                                                             │
-│  core/config.py  ←  backend/.env  (server-side secrets)      │
-└───────────────────────────┬─────────────────────────────────┘
+┌───────────────────────────▼─────────────────────────────────────┐
+│ FastAPI  ·  /api/v1                                             │
+│                                                                 │
+│  GET  /health                liveness, no dependencies          │
+│  GET  /health/readiness      dataset, DB, AI, vector store      │
+│  GET  /system/info           languages, features, disclaimer    │
+│  GET  /schemes               search · filter · pagination       │
+│  GET  /schemes/{id}          verified detail record             │
+│  POST /eligibility/check     in-memory deterministic rules      │
+│                                                                 │
+│  routes → services → repository                                 │
+│  core/source_policy.py       HTTPS official-source allowlist    │
+│  core/config.py              server-side secrets only           │
+└───────────────────────────┬─────────────────────────────────────┘
                             │
-              ┌─────────────▼──────────────┐
-              │ data/sample_schemes/       │
-              │ schemes.json (empty today) │
-              └────────────────────────────┘
+              ┌─────────────▼──────────────────────────────┐
+              │ data/sample_schemes/schemes.json           │
+              │ 15 schemes · 45 conditions · verified      │
+              └────────────────────────────────────────────┘
 ```
 
-Planned additions: Supabase PostgreSQL (Day 2), deterministic eligibility rules
-(Day 2), PyMuPDF + ChromaDB ingestion (Day 3), Gemini RAG with page citations
-(Day 4), trilingual polish and evaluation (Day 5–6), deployment (Day 7).
+Remaining milestones: PyMuPDF + ChromaDB ingestion (Day 3), Gemini RAG with page
+citations (Day 4), trilingual polish and evaluation (Day 5–6), deployment
+(Day 7). Supabase persistence is deferred beyond Day 2; the validated JSON
+repository is the active provider and the seam for a future database.
 
-Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the
+dataset policy in
+[`data/sample_schemes/README.md`](data/sample_schemes/README.md).
 
 ## Tech stack
 
@@ -108,10 +120,11 @@ Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | --- | --- |
 | Frontend | React 19, Vite 8, JavaScript, Tailwind CSS 4, React Router 7, Axios, Lucide |
 | Backend | Python 3.12, FastAPI, Pydantic 2, pydantic-settings, Uvicorn |
-| Data (Day 1) | Validated JSON repository |
-| Data (planned) | Supabase PostgreSQL, ChromaDB |
+| Data (Day 2) | Validated JSON repository with 15 curated schemes |
+| Data (deferred) | Supabase PostgreSQL |
+| Eligibility | Pure-Python three-valued rule evaluator, data-driven DNF rules |
 | AI (planned) | Google Gemini, evidence-first RAG |
-| Documents (planned) | PyMuPDF, semantic chunking, embeddings |
+| Documents (planned) | PyMuPDF, semantic chunking, embeddings, ChromaDB |
 | Deployment (planned) | Vercel (frontend), Render (backend) |
 
 ## Repository layout
@@ -120,29 +133,31 @@ Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 CIVICSAATHI-AI/
 ├── backend/
 │   ├── app/
-│   │   ├── core/                  # settings + logging
-│   │   ├── database/              # scheme repository adapter
-│   │   ├── models/                # Pydantic response contracts
-│   │   ├── routes/                # health, readiness, system info
-│   │   ├── services/              # business logic and feature registry
+│   │   ├── core/                  # settings, logging, source allowlist
+│   │   ├── database/              # scheme repository and search
+│   │   ├── models/                # Pydantic API and dataset contracts
+│   │   ├── routes/                # health, system, schemes, eligibility
+│   │   ├── services/              # responses, rules engine, readiness
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── tests/                     # 5 API tests
+│   ├── tests/                     # 139 API, dataset and engine tests
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── README.md
 ├── frontend/
 │   ├── src/
 │   │   ├── components/            # layout, marketing, UI, brand
-│   │   ├── data/modules.js        # module and feature copy
+│   │   ├── data/modules.js        # module status and feature copy
 │   │   ├── hooks/                 # snapshot polling
-│   │   ├── pages/                 # landing, dashboard, previews, 404
+│   │   ├── i18n/                  # EN/ML/HI catalogs
+│   │   ├── lib/                   # class and formatting helpers
+│   │   ├── pages/                 # landing, dashboard, schemes, eligibility
 │   │   ├── services/api.js        # Axios client and error normalization
 │   │   └── index.css              # design tokens and motion rules
 │   ├── public/
 │   └── README.md
 ├── data/sample_schemes/
-│   ├── schemes.json               # intentionally empty on Day 1
-│   └── README.md                  # official-source data policy
+│   ├── schemes.json               # 15 verified schemes and 45 conditions
+│   └── README.md                  # dataset, rule and source policy
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   └── screenshots/
@@ -203,15 +218,16 @@ offline state if the backend is not running.
 
 | URL | Expected |
 | --- | --- |
-| <http://localhost:5173> | Landing page |
+| <http://localhost:5173/app/schemes> | Verified catalogue with search and filters |
+| <http://localhost:5173/app/eligibility> | Optional form and preliminary results |
 | <http://localhost:5173/app> | Workspace dashboard with live API telemetry |
 | <http://127.0.0.1:8000/docs> | Swagger UI |
-| <http://127.0.0.1:8000/api/v1/health> | `{"status":"ok", ...}` |
-| <http://127.0.0.1:8000/api/v1/health/readiness> | `degraded` on Day 1, with per-dependency reasons |
+| <http://127.0.0.1:8000/api/v1/schemes> | 15 curated schemes, paginated |
+| <http://127.0.0.1:8000/api/v1/health/readiness> | `degraded`, with `scheme_dataset: ok` |
 
-Readiness is expected to be `degraded` right now: the dataset is empty and the
-AI/database dependencies are scheduled for later days. That is a truthful
-signal, not a failure.
+Readiness is expected to be `degraded` right now: the curated dataset is `ok`,
+while the database, AI and vector-store dependencies are scheduled for later
+days or deferred. That is a truthful signal, not a failure.
 
 ## Configuration
 
@@ -223,11 +239,11 @@ Frontend variables live in `frontend/.env.local` (copied from `.env.example`).
 | `ENVIRONMENT` | Backend | `development`, `staging`, `production` |
 | `LOG_LEVEL` | Backend | Defaults to `INFO` |
 | `CORS_ORIGINS` | Backend | Comma-separated allowed origins |
-| `GEMINI_API_KEY` | Backend | Server-side only; never expose in the browser |
+| `GEMINI_API_KEY` | Backend | Server-side only; Day 4 |
 | `GEMINI_MODEL` | Backend | Defaults to `gemini-2.5-flash` |
-| `SUPABASE_URL` | Backend | Day 2 integration |
+| `SUPABASE_URL` | Backend | Deferred; JSON repository is active |
 | `SUPABASE_SERVICE_ROLE_KEY` | Backend | Server-only; never ship to the client |
-| `CHROMA_PERSIST_DIR` | Backend | Defaults to `backend/.chroma` |
+| `CHROMA_PERSIST_DIR` | Backend | Defaults to `backend/.chroma`; Day 3 |
 | `VITE_API_BASE_URL` | Frontend | Public API origin; defaults to `http://127.0.0.1:8000` |
 
 `VITE_*` values are embedded in the browser bundle. Only public configuration
@@ -241,37 +257,55 @@ belongs there. All secrets stay in the backend environment.
 | `GET` | `/api/v1/health` | Liveness and uptime |
 | `GET` | `/api/v1/health/readiness` | Dependency state with human-readable details |
 | `GET` | `/api/v1/system/info` | Product metadata, languages and feature registry |
+| `GET` | `/api/v1/schemes` | Search, filter and paginate the curated catalogue |
+| `GET` | `/api/v1/schemes/{id}` | Full verified scheme record |
+| `POST` | `/api/v1/eligibility/check` | Deterministic in-memory eligibility check |
+
+List query parameters: `language`, `q` (max 100 characters), `category`,
+`government_level`, `page` and `page_size` (1–50, default 12). An empty result
+is a normal `200` with a message, never fabricated data.
 
 ```json
 {
   "status": "ok",
   "service": "civicsaathi-api",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "environment": "development",
-  "timestamp": "2026-11-15T18:15:28Z",
+  "timestamp": "2026-11-17T09:15:28Z",
   "uptime_seconds": 6.07
 }
 ```
 
-Planned contracts (documented in the UI previews):
+Eligibility accepts only allowlisted profile fields and rejects unknown fields.
+Every answer is optional; omitted answers remain `unknown`. Responses return
+condition statuses and supplied field *names*, never the values. Outcomes are
+`potentially_eligible`, `ineligible`, `insufficient_information` or
+`manual_review` — never a bare `eligible`.
 
-- `GET /api/v1/schemes` and `GET /api/v1/schemes/{id}`
-- `POST /api/v1/eligibility/check`
-- `POST /api/v1/documents` and `GET /api/v1/documents/{id}`
-- `POST /api/v1/assistant/query`
+Not implemented yet:
+
+- `POST /api/v1/documents` and `GET /api/v1/documents/{id}` (Day 3)
+- `POST /api/v1/assistant/query` (Day 4)
 
 ## Trust and safety rules
 
-1. **Deterministic eligibility.** The language model may explain a result; it
-   never produces the result. Rule evaluation lives in backend code.
-2. **Official sources only.** Every scheme record must link to a government
-   portal and carry a verification date.
-3. **No fabricated data.** An empty dataset is reported as `pending`, not
-   filled with invented schemes.
-4. **Evidence or nothing.** Document answers must cite a file and page, or say
-   the evidence was not found.
-5. **Demo content is labelled.** Illustrative UI content says so explicitly.
-6. **Secrets stay server-side.** No API key is bundled, logged or committed.
+1. **Deterministic eligibility.** The language model never produces the result.
+   Rule evaluation is pure Python and lives in the backend.
+2. **Official sources only.** Every scheme URL passes an HTTPS allowlist with a
+   recorded verification rationale, and every record carries a verification
+   date.
+3. **No fabricated data.** A missing or invalid dataset returns `503`; an empty
+   search returns an honest empty state.
+4. **No guessing from silence.** A missing profile answer is `unknown`, not
+   `false`. Manual official checks force `manual_review`.
+5. **Preliminary language only.** The strongest outcome is
+   `potentially_eligible`; final eligibility belongs to the relevant government
+   authority.
+6. **No profile persistence.** Eligibility answers are evaluated in memory,
+   never stored and never written to browser storage.
+7. **Evidence or nothing (planned).** Document answers must cite a file and
+   page, or say the evidence was not found.
+8. **Secrets stay server-side.** No API key is bundled, logged or committed.
 
 ## Quality checks
 
@@ -280,6 +314,7 @@ Planned contracts (documented in the UI previews):
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m ruff check .
+.\.venv\Scripts\python.exe -m ruff format --check .
 
 # Frontend
 cd frontend
@@ -287,16 +322,17 @@ npm run lint
 npm run build
 ```
 
-Current Day 1 result: **5/5 backend tests pass**, Ruff clean, Oxlint clean and
-the Vite production build completes. Screenshots were verified at 1440 px,
-390 px and 320 px in all three languages with zero horizontal overflow.
+Current Day 2 result: **139/139 backend tests pass**, Ruff lint and format are
+clean, Oxlint is clean and the Vite production build completes. Screenshots
+were verified at 1440 px and 390 px in all three languages with zero horizontal
+overflow.
 
 ## Roadmap
 
 | Day | Milestone | Outcome |
 | --- | --- | --- |
 | 1 | Foundation | Design system, routes, live API contract, health telemetry |
-| 2 | Schemes & eligibility | Curated source-linked catalogue, search, deterministic rules engine |
+| 2 | Schemes & eligibility | 15-scheme verified catalogue, search and deterministic rules engine |
 | 3 | Document intelligence | PDF upload, extraction, chunking, embeddings, ChromaDB retrieval |
 | 4 | Evidence-backed assistant | Gemini RAG in English, Malayalam and Hindi with page citations |
 | 5 | Trilingual journey | Full English, Malayalam and Hindi experience and end-to-end UX polish |
@@ -320,5 +356,7 @@ The project is not deployed yet. When it is:
 
 CIVICSAATHI AI is a hackathon prototype and is not an official Government of
 Kerala service. Always verify scheme details on the official portal linked in
-each record. The illustrative answer card on the landing page is demo content,
-not an official answer.
+each record. Eligibility results are preliminary and rule-based; final
+eligibility is determined by the relevant government authority. The
+illustrative answer card on the landing page is demo content, not an official
+answer.

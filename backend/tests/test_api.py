@@ -1,16 +1,6 @@
-"""API tests for the Day 1 foundation."""
+"""API tests for the foundation and Day 2 live features."""
 
-import pytest
 from fastapi.testclient import TestClient
-
-from app.main import app
-
-
-@pytest.fixture(scope="module")
-def client():
-    # The context manager runs the lifespan hook, creating app.state.
-    with TestClient(app) as test_client:
-        yield test_client
 
 
 def test_health_reports_ok(client: TestClient) -> None:
@@ -42,14 +32,18 @@ def test_readiness_reports_all_dependencies(client: TestClient) -> None:
     } <= check_ids
 
 
-def test_system_info_exposes_bilingual_support(client: TestClient) -> None:
+def test_system_info_exposes_trilingual_support(client: TestClient) -> None:
     response = client.get("/api/v1/system/info")
     assert response.status_code == 200
 
     body = response.json()
     language_codes = {language["code"] for language in body["languages"]}
-    assert language_codes == {"en", "ml"}
-    assert any(feature["status"] == "live" for feature in body["features"])
+    assert language_codes == {"en", "ml", "hi"}
+
+    features = {feature["id"]: feature for feature in body["features"]}
+    assert features["scheme-discovery"]["status"] == "live"
+    assert features["eligibility"]["status"] == "live"
+    assert features["document-intelligence"]["status"] != "live"
 
 
 def test_cors_allows_the_vite_dev_origin(client: TestClient) -> None:

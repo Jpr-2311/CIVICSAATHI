@@ -71,8 +71,7 @@ def test_subdomains_of_an_allowed_domain_are_accepted() -> None:
 
 def test_host_is_compared_after_normalisation() -> None:
     assert (
-        validate_official_url("https://PMKISAN.GOV.IN./")
-        == "https://PMKISAN.GOV.IN./"
+        validate_official_url("https://PMKISAN.GOV.IN./") == "https://PMKISAN.GOV.IN./"
     )
 
 

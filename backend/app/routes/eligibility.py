@@ -3,8 +3,8 @@
 Privacy notes for this route:
 - the request body is evaluated in memory and never persisted;
 - no body values are logged, including on validation errors;
-- the response returns condition statuses and the *names* of supplied
-  fields, never the values themselves.
+- validation errors and the response return field locations and the *names*
+  of supplied fields, never the values themselves.
 """
 
 from fastapi import APIRouter, Request

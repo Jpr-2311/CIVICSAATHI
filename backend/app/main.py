@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -76,6 +77,30 @@ async def root() -> dict[str, str]:
         "docs": "/docs",
         "health": f"{settings.api_prefix}/health",
     }
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Return validation errors without echoing the submitted values.
+
+    FastAPI's default 422 body includes the rejected input. On the eligibility
+    route an unknown field may contain an Aadhaar number or another identifier,
+    so the response keeps the field location and message but drops the value.
+    """
+    errors = [
+        {
+            "type": error.get("type"),
+            "loc": list(error.get("loc", [])),
+            "msg": error.get("msg"),
+        }
+        for error in exc.errors()
+    ]
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors, "code": "validation_error"},
+    )
 
 
 @app.exception_handler(DatasetUnavailableError)

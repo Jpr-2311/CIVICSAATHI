@@ -28,10 +28,20 @@ import { API_PREFIX, apiBaseUrl } from '@/services/api'
 import { cn } from '@/lib/cn'
 
 const QUICK_ACTIONS = [
-  { id: 'schemes', to: '/app/schemes', icon: Search },
-  { id: 'eligibility', to: '/app/eligibility', icon: ListChecks },
-  { id: 'assistant', to: '/app/assistant', icon: MessagesSquare },
-  { id: 'documents', to: '/app/documents', icon: FileText },
+  { id: 'schemes', to: '/app/schemes', icon: Search, status: 'live' },
+  {
+    id: 'eligibility',
+    to: '/app/eligibility',
+    icon: ListChecks,
+    status: 'live',
+  },
+  {
+    id: 'assistant',
+    to: '/app/assistant',
+    icon: MessagesSquare,
+    status: 'preview',
+  },
+  { id: 'documents', to: '/app/documents', icon: FileText, status: 'preview' },
 ]
 
 const READINESS_TONES = {
@@ -186,7 +196,9 @@ export default function DashboardPage() {
                     featured ? 'text-coral-300' : 'text-coral-700',
                   )}
                 >
-                  {t('common.preview')}
+                  {action.status === 'live'
+                    ? t('common.live')
+                    : t('common.preview')}
                   <ArrowRight
                     className="h-3.5 w-3.5 transition group-hover:translate-x-0.5"
                     aria-hidden="true"
@@ -379,14 +391,14 @@ export default function DashboardPage() {
               {copy.dashboard.plan.nextLabel}
             </p>
             <h2 className="mt-2 font-display text-2xl leading-tight text-cream-50">
-              {copy.dashboard.plan.items[1].title}
+              {copy.dashboard.plan.items[2].title}
             </h2>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-cream-200/70">
               {copy.dashboard.plan.nextCopy}
             </p>
             <Button
               as={Link}
-              to="/app/schemes"
+              to="/app/documents"
               variant="white"
               size="sm"
               className="mt-4"
@@ -517,7 +529,7 @@ export default function DashboardPage() {
 
       <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-[11px] leading-relaxed text-ink-400">
         <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-        CIVICSAATHI AI · v{health?.version ?? '0.1.0'} ·{' '}
+        CIVICSAATHI AI · v{health?.version ?? '0.2.0'} ·{' '}
         {health?.environment ?? 'development'}
         <span aria-hidden="true">—</span>
         {copy.dashboard.footer}

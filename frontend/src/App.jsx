@@ -7,6 +7,7 @@ import DocumentsPage from '@/pages/DocumentsPage'
 import EligibilityPage from '@/pages/EligibilityPage'
 import LandingPage from '@/pages/LandingPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import SchemeDetailPage from '@/pages/SchemeDetailPage'
 import SchemesPage from '@/pages/SchemesPage'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
       <Route path="/app" element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="schemes" element={<SchemesPage />} />
+        <Route path="schemes/:schemeId" element={<SchemeDetailPage />} />
         <Route path="eligibility" element={<EligibilityPage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="assistant" element={<AssistantPage />} />

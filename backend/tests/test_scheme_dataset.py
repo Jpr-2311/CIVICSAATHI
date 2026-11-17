@@ -237,7 +237,9 @@ def test_repository_malformed_json_is_unavailable(tmp_path: Path) -> None:
     assert repository.status().available is False
 
 
-def test_repository_rejects_an_invalid_record(tmp_path: Path, raw_dataset: dict) -> None:
+def test_repository_rejects_an_invalid_record(
+    tmp_path: Path, raw_dataset: dict
+) -> None:
     payload = _mutated(raw_dataset)
     payload["schemes"][0]["source"]["url"] = "https://example.com/fake"
     path = tmp_path / "schemes.json"
@@ -276,9 +278,7 @@ def test_central_scheme_cannot_declare_a_state(raw_dataset: dict) -> None:
 
 def test_state_scheme_must_declare_a_state(raw_dataset: dict) -> None:
     payload = _mutated(raw_dataset)
-    kasp = next(
-        scheme for scheme in payload["schemes"] if scheme["id"] == "kasp"
-    )
+    kasp = next(scheme for scheme in payload["schemes"] if scheme["id"] == "kasp")
     kasp["state"] = None
     with pytest.raises(ValidationError, match="State schemes"):
         SchemeDataset.model_validate(payload)

@@ -34,24 +34,28 @@ const SERVICES = [
     to: '/app/schemes',
     icon: Search,
     iconClass: 'bg-coral-50 text-coral-700',
+    status: 'live',
   },
   {
     id: 'eligibility',
     to: '/app/eligibility',
     icon: ListChecks,
     iconClass: 'bg-teal-50 text-teal-700',
+    status: 'live',
   },
   {
     id: 'documents',
     to: '/app/documents',
     icon: FileText,
     iconClass: 'bg-brand-50 text-brand-700',
+    status: 'preview',
   },
   {
     id: 'assistant',
     to: '/app/assistant',
     icon: MessagesSquare,
     iconClass: 'bg-cream-100 text-brand-800',
+    status: 'preview',
   },
 ]
 
@@ -227,8 +231,22 @@ export default function LandingPage() {
                       >
                         <Icon className="h-5 w-5" aria-hidden="true" />
                       </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
-                        {item.capability}
+                      <span className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
+                          {item.capability}
+                        </span>
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset',
+                            service.status === 'live'
+                              ? 'bg-teal-50 text-teal-700 ring-teal-200'
+                              : 'bg-cream-100 text-ink-500 ring-ink-200',
+                          )}
+                        >
+                          {service.status === 'live'
+                            ? t('common.live')
+                            : t('common.preview')}
+                        </span>
                       </span>
                     </div>
                     <h3 className="mt-5 text-lg font-semibold text-brand-950">

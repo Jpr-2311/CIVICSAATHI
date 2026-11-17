@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "CIVICSAATHI AI"
     app_tagline: str = "Making government information accessible to everyone."
-    app_version: str = "0.1.0"
+    app_version: str = "0.2.0"
     environment: Literal["development", "staging", "production"] = "development"
     api_prefix: str = "/api/v1"
     log_level: str = "INFO"
