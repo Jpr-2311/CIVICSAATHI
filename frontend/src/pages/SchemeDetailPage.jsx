@@ -405,7 +405,7 @@ export default function SchemeDetailPage() {
 
             <Button
               as={Link}
-              to="/app/eligibility"
+              to={`/app/eligibility?scheme_id=${encodeURIComponent(detail.id)}`}
               variant="primary"
               className="mt-4 w-full"
             >

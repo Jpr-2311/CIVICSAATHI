@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   ArrowRight,
   CheckCircle2,
@@ -19,10 +19,11 @@ import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import Notice from '@/components/ui/Notice'
+import Skeleton from '@/components/ui/Skeleton'
 import ModuleHeader from '@/components/workspace/ModuleHeader'
 import { useLanguage, useMessages } from '@/i18n'
 import { formatDateTime, formatDate } from '@/lib/format'
-import { checkEligibility, isCanceled } from '@/services/api'
+import { checkEligibility, getScheme, isCanceled } from '@/services/api'
 import { cn } from '@/lib/cn'
 
 const EMPTY_FORM = {
@@ -258,6 +259,15 @@ export default function EligibilityPage() {
   const [result, setResult] = useState(null)
   const [requestError, setRequestError] = useState(null)
   const [outcomeFilter, setOutcomeFilter] = useState('all')
+  const [searchParams] = useSearchParams()
+  const schemeId = searchParams.get('scheme_id') || ''
+  const [contextReloadKey, setContextReloadKey] = useState(0)
+  const [schemeContext, setSchemeContext] = useState({
+    status: 'idle',
+    data: null,
+    error: null,
+  })
+  const [showAllSchemes, setShowAllSchemes] = useState(false)
 
   const formRef = useRef(null)
   const resultsRef = useRef(null)
@@ -298,6 +308,37 @@ export default function EligibilityPage() {
     if (!lastPayloadRef.current) return
     runCheck({ ...lastPayloadRef.current, language })
   }, [language, runCheck])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    let active = true
+
+    // oxlint-disable-next-line react/set-state-in-effect
+    setShowAllSchemes(false)
+    if (!schemeId) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setSchemeContext({ status: 'idle', data: null, error: null })
+      return () => {
+        active = false
+      }
+    }
+
+    // oxlint-disable-next-line react/set-state-in-effect
+    setSchemeContext({ status: 'loading', data: null, error: null })
+    getScheme(schemeId, { language }, { signal: controller.signal })
+      .then((data) => {
+        if (active) setSchemeContext({ status: 'ready', data, error: null })
+      })
+      .catch((error) => {
+        if (!active || isCanceled(error)) return
+        setSchemeContext({ status: 'error', data: null, error })
+      })
+
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [schemeId, language, contextReloadKey])
 
   const update = (key, value) => {
     setForm((previous) => ({ ...previous, [key]: value }))
@@ -351,7 +392,11 @@ export default function EligibilityPage() {
     })
   }
 
-  const results = result?.results ?? []
+  const allResults = result?.results ?? []
+  const selectedResults = schemeId
+    ? allResults.filter((item) => item.scheme_id === schemeId)
+    : allResults
+  const results = schemeId && !showAllSchemes ? selectedResults : allResults
   const counts = results.reduce((accumulator, item) => {
     accumulator[item.outcome] = (accumulator[item.outcome] ?? 0) + 1
     return accumulator
@@ -468,6 +513,85 @@ export default function EligibilityPage() {
       >
         {copy.eligibility.noticeCopy}
       </Notice>
+
+      {schemeId ? (
+        <Card className="mt-4 border-teal-200 bg-teal-50/40 p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-700">
+                {copy.eligibility.context.eyebrow}
+              </p>
+              {schemeContext.status === 'ready' && schemeContext.data ? (
+                <>
+                  <h2 className="mt-1 font-display text-xl text-brand-950">
+                    {copy.eligibility.context.title.replace(
+                      '{scheme}',
+                      schemeContext.data.name,
+                    )}
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-xs leading-relaxed text-ink-600">
+                    {schemeContext.data.summary}
+                  </p>
+                </>
+              ) : schemeContext.status === 'loading' ? (
+                <div className="mt-2 space-y-2">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-3 w-5/6" />
+                </div>
+              ) : (
+                <h2 className="mt-1 font-display text-xl text-brand-950">
+                  {copy.eligibility.context.errorTitle}
+                </h2>
+              )}
+              <p className="mt-2 max-w-2xl text-[11px] leading-relaxed text-ink-500">
+                {schemeContext.status === 'error'
+                  ? copy.eligibility.context.errorCopy
+                  : copy.eligibility.context.copy}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setContextReloadKey((key) => key + 1)}
+                disabled={schemeContext.status === 'loading'}
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                {copy.eligibility.context.retry}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAllSchemes((current) => !current)}
+              >
+                {showAllSchemes
+                  ? copy.eligibility.context.showSelected
+                  : copy.eligibility.context.showAll}
+              </Button>
+            </div>
+          </div>
+          {schemeContext.status === 'ready' && schemeContext.data ? (
+            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-t border-teal-200/70 pt-3 text-[11px]">
+              <Link
+                to={`/app/schemes/${schemeId}`}
+                className="inline-flex items-center gap-1 font-semibold text-teal-800 hover:text-brand-950"
+              >
+                {copy.eligibility.context.back}
+                <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </Link>
+              <Link
+                to="/app/schemes"
+                className="inline-flex items-center gap-1 text-ink-500 hover:text-brand-950"
+              >
+                {copy.eligibility.context.clear}
+                <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </Link>
+            </div>
+          ) : null}
+        </Card>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_19rem] lg:items-start">
         <Card className="p-5 sm:p-6">
@@ -637,6 +761,11 @@ export default function EligibilityPage() {
                 <p className="mt-1 text-xs text-ink-400">
                   {copy.eligibility.results.privateNote}
                 </p>
+                {schemeId && !showAllSchemes ? (
+                  <p className="mt-1 text-[11px] font-medium text-teal-700">
+                    {copy.eligibility.context.filtered}
+                  </p>
+                ) : null}
               </div>
               <Button variant="secondary" size="sm" onClick={startOver}>
                 {copy.eligibility.clear}

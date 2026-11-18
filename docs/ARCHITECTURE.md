@@ -1,6 +1,6 @@
 # Architecture — CIVICSAATHI AI
 
-**Status:** Day 4 complete · **Version:** 0.2.0
+**Status:** Day 5 complete · **Version:** 0.2.0
 **Last updated:** 18 November 2026
 
 This document explains how the system is put together, which boundaries exist
@@ -58,6 +58,27 @@ reference for extending the project without weakening its guarantees.
   backend-populated citations, loading, insufficient, error and retry states.
 - Mocked Gemini tests, a gated opt-in live test, and Day 4 documentation.
 
+### Built by Day 5
+
+- A dashboard that reads real scheme and document totals from the existing APIs,
+  with explicit loading, unavailable, empty and retry states instead of sample
+  activity or guessed counts.
+- A scheme→eligibility handoff using `?scheme_id=<id>` as a browser-side context
+  parameter. The eligibility request payload is unchanged and never carries the
+  scheme id.
+- A document→assistant handoff using `?document=<id>`. Indexed-only filters and
+  stale-selection recovery are shared by both pages; `needs_ocr` documents stay
+  unsearchable.
+- Backend-citation inspection from the assistant back to the document library
+  using `?document=<id>&page=<n>` plus transient router state. No PDF preview or
+  citation-metadata endpoint was added.
+- Language-preserving navigation: scheme and document context reload in the new
+  language, and the assistant re-asks the last question using the newly selected
+  language.
+- Frontend and backend Day 5 integration tests, 640-key EN/ML/HI parity, and
+  [`DAY_5_INTEGRATION.md`](DAY_5_INTEGRATION.md). No backend route, model or
+  validation rule changed.
+
 ### Deliberately not built yet
 
 - Supabase persistence. Deferred beyond Day 2; the JSON repository is the
@@ -70,7 +91,9 @@ reference for extending the project without weakening its guarantees.
 
 All four workspace modules are labelled live. Scheme discovery, eligibility,
 document intelligence and the evidence-grounded assistant share the same
-retrieval and trust rules; no module claims a capability it does not have.
+retrieval and trust rules; no module claims a capability it does not have. Day 5
+connects these modules without changing their backend contracts or moving their
+state into a global store.
 
 ---
 
@@ -164,6 +187,13 @@ configurable and must be updated for deployment.
 | `/app/assistant` | `AssistantPage` | Live grounded Q&A with backend citations |
 | `*` | `NotFoundPage` | Route-level 404 |
 
+Day 5 adds three browser-side query handoffs: `?scheme_id=<id>` on eligibility,
+`?document=<id>` on the assistant and documents pages, and `&page=<n>` on the
+documents page when inspecting a citation. They restore context on back/forward
+navigation but are never sent as eligibility or assistant fields. Citation
+metadata also travels in transient router state, so a hard reload can show the
+cited excerpt even if the document was deleted.
+
 `AppShell` wraps all `/app/*` routes and owns the persistent sidebar, topbar,
 mobile drawer and backend snapshot. `useOutletContext()` passes the snapshot to
 the dashboard without a global state library.
@@ -184,14 +214,17 @@ index.css         design tokens, fonts, motion policy
 There is still no global store. Catalogue state is local to `SchemesPage`;
 detail state is local to `SchemeDetailPage`; eligibility answers and results are
 local to `EligibilityPage`; document library, upload, detail and search state is
-local to `DocumentsPage`. This keeps sensitive eligibility answers out of shared
-application state.
+local to `DocumentsPage`; question, filter and answer state is local to
+`AssistantPage`. This keeps sensitive eligibility answers out of shared
+application state. Day 5 context travels through the URL and router state, not a
+new store.
 
 ### 5.3 API boundary
 
 `services/api.js` wraps Axios and exposes `getHealth`, `getReadiness`,
 `getSystemInfo`, `getSchemes`, `getScheme`, `checkEligibility`, `listDocuments`,
-`getDocument`, `uploadDocument`, `deleteDocument` and `searchDocuments`.
+`getDocument`, `uploadDocument`, `deleteDocument`, `searchDocuments` and
+`askAssistant`.
 
 - Every scheme list/detail request carries the current interface language.
 - Empty and undefined query parameters are dropped before the request.
@@ -207,6 +240,11 @@ application state.
 
 ### 5.4 Live screens
 
+**Dashboard.** Live scheme and document totals from `getSchemes` and
+`listDocuments`, a readiness-derived core-service count, skeleton loading,
+**Unavailable** on failure, an empty-library hint and one retry action. The old
+sample-activity panel is gone, and the assistant quick action is labelled live.
+
 **Catalogue.** Debounced search, all nine categories, three government-level
 chips, 12-per-page pagination, skeleton loading, refreshing state that keeps the
 previous page visible, empty state with a filter reset, error state with retry,
@@ -216,7 +254,8 @@ verification date and primary source link.
 
 **Detail.** Loading skeleton, distinct 404 and generic error states, complete
 record sections, manual-condition warning, primary and additional sources,
-content note and disclaimer, plus an eligibility call to action.
+content note and disclaimer, plus an eligibility CTA carrying
+`?scheme_id=<encoded-id>`.
 
 **Eligibility.** A 34-field optional form grouped into five sections. Numeric
 fields are validated locally (whole numbers, age 0–120, non-negative money,
@@ -225,20 +264,29 @@ the engine records `unknown` rather than guessing. Boolean questions use a
 tri-state yes / no / not sure control. Results show outcome counts and filters,
 per-condition pass/fail/unknown explanations, per-route combination status,
 sources, verification dates and the preliminary-result disclaimer. The page
-re-runs the check when the interface language changes.
+re-runs the check when the interface language changes. With `scheme_id`, it
+shows a localised context card, filters the displayed results by that scheme and
+can switch back to all results; the request payload remains unchanged.
 
 **Documents.** Live library with upload (drag-and-drop or picker, progress bar,
 multi-file support), per-document status and passage counts, detail view
 (checksum and PDF metadata), deletion with confirmation, and multilingual
-search with an optional document filter. Results show the real passage,
-filename, page number and similarity, plus a verification notice. Empty,
-loading, upload-error and no-evidence states are explicit. No fake documents or
-answers are seeded.
+search with an indexed-only document filter. Indexed rows can hand off to the
+assistant; non-indexed rows say **Not searchable yet**. A citation handoff opens
+a source-inspection card using only backend-provided metadata, with a warning if
+the document is missing. Results show the real passage, filename, page number
+and similarity. Empty, loading, list-error, upload-error and no-evidence states
+are explicit. No fake documents or answers are seeded.
 
-The assistant is live and labelled accordingly. It sends the selected question
-and language to the backend, renders only validated citations returned by the
-server, and shows an explicit insufficient-evidence or error state instead of a
-fabricated answer.
+**Assistant.** A live, labelled Q&A page that reads the optional document filter
+from the URL, refreshes its indexed-only selector on mount and tab return, and
+recovers from missing or unindexed selections. It re-asks the last question when
+the interface language changes and shows document-list and request errors with
+retry. Only validated backend citations are rendered, with an **Inspect source**
+link back to the document library and no invented metadata.
+
+The assistant still shows an explicit insufficient-evidence or error state
+instead of a fabricated answer.
 
 ### 5.5 Snapshot flow
 
@@ -278,6 +326,12 @@ AppShell
 | Scanned/low-text PDF | Stored as `needs_ocr` and excluded from search with an honest message |
 | Document search with no match | Empty state with `no relevant evidence` message |
 | Document deletion | Confirmation step, then scoped delete and refreshed library |
+| Dashboard count failure | `Unavailable` metric, no guessed zero, retry reloads both counts |
+| Unknown `scheme_id` in eligibility | Context error with retry and a route back to the catalogue |
+| Stale assistant document parameter | Parameter removed, translated missing/unindexed warning |
+| Assistant document list failure | Warning notice with retry; asking remains possible without a filter |
+| Cited document deleted | Cited excerpt stays visible with an explicit missing-document warning |
+| Language switch during an answer | In-flight answer settles, then the question is re-asked in the new language |
 | Partial health snapshot | Last good snapshot retained, marked with its last-checked time |
 | Unknown route | 404 page with a route back to the workspace |
 
@@ -427,6 +481,7 @@ message. Known 4xx responses keep FastAPI's `detail` string when present.
 | `POST` | `/api/v1/documents/search` | Retrieve page-cited passages |
 | `GET` | `/api/v1/documents/{document_id}` | Read document metadata |
 | `DELETE` | `/api/v1/documents/{document_id}` | Delete one document and its vectors |
+| `POST` | `/api/v1/assistant/ask` | Grounded answer with validated citations |
 
 `/health` remains cheap and independent of external services so a platform
 liveness probe reflects the process, not a third party. Document routes accept
@@ -478,6 +533,10 @@ fields are optional; omitted fields remain unknown.
   "bank_account": true
 }
 ```
+
+Day 5's `?scheme_id=<id>` is a frontend display context only. Adding
+`scheme_id` to this JSON body still returns `422 validation_error`; no
+eligibility value is sent to Gemini.
 
 Response fields: `language`, `checked_at`, `profile_fields_received`,
 `results`, `disclaimer`. `profile_fields_received` lists field *names* only, so
@@ -551,7 +610,11 @@ Unknown fields are rejected, so a client cannot inject a system prompt. The
 response carries the generated `answer`, the effective `language`,
 `evidence_found`, `insufficient_evidence`, backend-populated `citations`, a
 localized `message`, a disclaimer and a similarity notice. Nothing is stored.
-See `docs/DAY_4_GEMINI.md` for the full pipeline and validation rules.
+Citations contain only backend-derived document id, title, page and excerpt;
+there is no URL field and no page-preview endpoint. Day 5 renders these fields
+in a source-inspection card without adding or inferring metadata. See
+`docs/DAY_4_GEMINI.md` for the full pipeline and validation rules and
+[`docs/DAY_5_INTEGRATION.md`](DAY_5_INTEGRATION.md) for the connected journey.
 
 ---
 
@@ -830,7 +893,7 @@ voice, agents and persistent chat history are out of scope.
 
 ## 11. Security and privacy
 
-| Concern | Control through Day 4 | Planned control |
+| Concern | Control through Day 5 | Planned control |
 | --- | --- | --- |
 | API keys | Server-side `.env`, `SecretStr`, gitignored | Rotate keys before demo |
 | Gemini key | Backend only; never in `VITE_*` or the browser bundle | Rotate keys before demo |
@@ -841,7 +904,8 @@ voice, agents and persistent chat history are out of scope.
 | Browser bundle | Only `VITE_API_BASE_URL` | Never add secrets to `VITE_*` |
 | CORS | Explicit development origins | Production frontend origin only |
 | Dataset sources | HTTPS + reviewed allowlist + rationale | Review on every new domain |
-| Eligibility PII | Allowlisted fields, in-memory only, no body logging | Document retention policy before any persistence |
+| Eligibility PII | Allowlisted fields, in-memory only, no body logging, never in a URL or global store | Document retention policy before any persistence |
+| Cross-module context | `scheme_id` / `document` query handoffs only; no new API field, no profile in the URL | Policy before adding persistent handoff state |
 | Response leakage | Field names only, never values; no storage paths | Same |
 | Uploads | Content validation, 10 MB / 100 page caps, encrypted/corrupt rejected, generated storage names, no script execution | Retention policy and virus scanning for production |
 | Vector isolation | Chroma deletes scoped by `document_id` | Same |
@@ -880,8 +944,12 @@ public bucket, and are never used to train a model.
 | Fabricated citation id | Compared with retrieved evidence ids | Discarded; never rendered |
 | Missing Supabase key | Settings check | `not_configured`, JSON provider remains active |
 | Unhandled exception | Global handler | Logged with traceback, generic 500 to client |
+| Dashboard total request failure | Per-metric error state | `Unavailable`, no guessed count, retry action |
+| Unknown `scheme_id` handoff | Scheme detail lookup | Context error, retry, route back to catalogue |
+| Stale document handoff | Library refresh / `404 document_not_found` | Query parameter removed, translated warning, list refresh |
+| Deleted cited document | Citation router state | Excerpt retained with explicit missing-document warning |
 | Stale poll response | Request ID | Discarded |
-| Background tab | Visibility API | Polling paused, immediate refresh on return |
+| Background tab | Visibility API | Polling paused; the assistant also refreshes its document list on return |
 
 ---
 
@@ -909,27 +977,33 @@ tiny in-memory PDFs, so they need no model download or network.
 | `tests/test_gemini_client.py` | Lazy wrapper, schema, bounds and safe error mapping |
 | `tests/test_assistant_service.py` | RAG pipeline, evidence gate, citation validation, retry, injection |
 | `tests/test_assistant_api.py` | Ask endpoint, validation, filters, error codes and no history |
-| `tests/integration/test_gemini_integration.py` | Gated LIVE Gemini grounded-answer check |
+| `tests/test_day5_integration.py` | Cross-module scheme/eligibility and document/assistant contracts, indexed filtering, stale selection and fabricated-metadata rejection |
+| `tests/integration/test_gemini_integration.py` | Gated LIVE Gemini answer and document-filtered multilingual checks |
 
-Result: **229 passed, 2 skipped** in the default run (both gated integration
-tests). With `CIVICSAATHI_RUN_MODEL_TESTS=1`, the document test uses
+Result: **233 passed, 3 skipped** in the default run (the gated real-model
+document test and the two gated live Gemini tests). With
+`CIVICSAATHI_RUN_MODEL_TESTS=1`, the document test uses
 `intfloat/multilingual-e5-small` from the local Hugging Face cache. With
-`CIVICSAATHI_RUN_GEMINI_TESTS=1` and a real key, the separate Gemini test checks
-a live grounded answer; neither gated test is needed for the default suite.
+`CIVICSAATHI_RUN_GEMINI_TESTS=1` and a real key, the separate Gemini file checks
+a live grounded answer and a document-filtered Malayalam answer; neither gated
+test is needed for the default suite. Day 5 retried the live gate, but outbound
+TLS handshakes timed out before a provider response, so live validation is
+recorded as unavailable rather than passing.
 
 Also enforced:
 
 - Ruff lint and format check for all backend code.
 - Oxlint for the frontend.
-- Vitest component and contract tests for the assistant UI, plus 9 frontend
-  tests in the default run.
+- Vitest component and integration tests for the assistant UI, dashboard,
+  scheme context, document handoff, citation recovery and language behaviour;
+  20 frontend tests pass in the default run.
 - Vite production build, which catches import and bundling errors.
 - Catalogue key parity: EN, ML and HI contain identical flattened key sets,
-  enforced by a committed Vitest test (598 keys in Day 4).
+  enforced by a committed Vitest test (640 keys after Day 5).
 - Manual browser verification at 1440 px and 390 px for the Day 2 shell,
   including empty search, invalid id, offline API and language switching. The
-  Day 3 document UI is covered by API tests and a production build but has not
-  yet been manually exercised in a browser.
+  Day 3 document UI and the Day 5 connected flows are covered by tests and a
+  production build but have not yet been manually exercised in a browser.
 
 ---
 
@@ -985,12 +1059,13 @@ Configuration requirements:
 | Secrets and paths only on the server | Browser bundles are public | All privileged calls go through the API |
 | 30 s polling instead of websockets | Simple, adequate for an operations dashboard | Slight staleness; acceptable |
 | No global state library | Keeps eligibility answers out of shared state | Revisit only if cross-page state grows |
+| URL query handoffs, not new API fields | Restores context on back/forward without persisting profiles or changing backend contracts | Query state is visible in the browser; never put profile data there |
 
 ---
 
-## 16. Day 5+ extension points
+## 16. Day 6+ extension points
 
-Day 4 is complete. Start future work here:
+Day 5 is complete. Start future work here:
 
 1. Add retrieval/generation evaluation sets with expected pages before changing
    chunking, the similarity gate or the model.

@@ -2,11 +2,12 @@
 
 FastAPI service for the CIVICSAATHI AI civic intelligence workspace.
 
-Day 4 adds the **evidence-grounded assistant**: official `google-genai` SDK
+Day 4 added the **evidence-grounded assistant**: official `google-genai` SDK
 integration, bounded retrieval from the Day 3 document pipeline, strict JSON
-validation and backend-populated page citations. The live scheme catalogue,
-deterministic eligibility engine and document APIs remain unchanged. Supabase,
-voice, agents and persistent chat history are still out of scope.
+validation and backend-populated page citations. Day 5 connects the existing
+scheme, eligibility, document and assistant APIs through browser-side context
+handoffs; no backend route, model or validation rule changed. Supabase, voice,
+agents and persistent chat history are still out of scope.
 
 ## Requirements
 
@@ -57,13 +58,17 @@ To run the gated real-model integration test afterwards:
 $env:CIVICSAATHI_RUN_MODEL_TESTS = '1'
 .\.venv\Scripts\python.exe -m pytest tests/integration -q
 
-# Opt-in LIVE Gemini test: requires a real key and spends an API call.
+# Opt-in LIVE Gemini tests: require a real key and spend API calls.
 $env:CIVICSAATHI_RUN_GEMINI_TESTS = '1'
 .\.venv\Scripts\python.exe -m pytest tests/integration/test_gemini_integration.py -q
+Remove-Item Env:\CIVICSAATHI_RUN_GEMINI_TESTS
 ```
 
-The normal test suite uses `FakeGemini` and never contacts Google. The live test
-is separate and is not needed to validate the Day 4 implementation.
+The normal test suite uses `FakeGemini` and never contacts Google. The live file
+contains two gated checks (English and document-filtered Malayalam) and is not
+needed to validate the Day 5 implementation. During Day 5 validation the gate
+was retried but both checks timed out during the outbound TLS handshake before
+a provider response, so live validation is unavailable in this environment.
 
 ## Run
 
@@ -244,7 +249,7 @@ python -m ruff check app tests
 python -m ruff format --check app tests
 ```
 
-**229 unit/API tests pass and 2 integration tests are skipped by default.**
+**233 unit/API tests pass and 3 integration tests are skipped by default.**
 The gated tests are opt-in so no routine test depends on a model download or a
 paid Gemini call:
 
@@ -276,14 +281,18 @@ The suite covers:
   and prompt-injection resistance;
 - the assistant HTTP contract, validation, safe error codes and no history;
 - the lazy Gemini wrapper's schema, error mapping, timeout handling and bounded
-  generation configuration (without a network call).
+  generation configuration (without a network call);
+- Day 5 cross-module contracts: scheme context never changes the eligibility
+  payload, indexed-only filtering and `needs_ocr`, document-filtered citations,
+  stale selection recovery and fabricated citation-metadata rejection.
 
 Unit tests use deterministic injectable `FakeEmbedder` and `FakeGemini` peers
 with tiny in-memory PDFs, so they need neither the neural model nor a network.
 The gated document integration test uses the real
 `intfloat/multilingual-e5-small` model to confirm cross-language retrieval. The
-separate gated Gemini test uses a real configured key to check a grounded answer
-with a valid citation; it never runs by default.
+separate gated Gemini file uses a real configured key to check a grounded answer
+and a document-filtered Malayalam answer with valid citations; it never runs by
+default.
 
 ## Structure
 
@@ -339,6 +348,7 @@ backend/
 │   ├── test_gemini_client.py
 │   ├── test_assistant_service.py
 │   ├── test_assistant_api.py
+│   ├── test_day5_integration.py     # Cross-module API contracts
 │   └── integration/
 │       ├── test_documents_integration.py  # Gated real-model test
 │       └── test_gemini_integration.py     # Gated LIVE Gemini test
@@ -403,10 +413,14 @@ backend/
 - **Single-node persistence.** ChromaDB uses a local disk directory; deployment
   needs a mounted volume or a managed replacement.
 
-## Day 4 reference
+## Day 4 and Day 5 references
 
 See [`docs/DAY_4_GEMINI.md`](../docs/DAY_4_GEMINI.md) for the full request and
 response contract, RAG pipeline, evidence/citation validation, localized
 insufficient-evidence behavior, safety controls and local setup. Eligibility and
 scheme lookup remain outside that pipeline; the document retrieval contract
 above is the grounding source.
+
+See [`docs/DAY_5_INTEGRATION.md`](../docs/DAY_5_INTEGRATION.md) for the
+connected journey, the frontend handoff parameters, mocked-versus-live
+validation status and the invariants that Day 5 did not change.

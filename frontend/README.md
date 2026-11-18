@@ -2,11 +2,11 @@
 
 React + Vite workspace for the CIVICSAATHI AI civic intelligence assistant.
 
-The Day 4 frontend includes a trilingual public landing page, a live telemetry
-dashboard, a searchable verified-scheme catalogue, scheme detail pages, a
-deterministic eligibility form, live document intelligence and an evidence-backed
-assistant with validated backend citations. English, Malayalam and Hindi share
-one interface and one route structure.
+Day 5 connects the Day 1–4 frontend into a trilingual journey: a public landing
+page, a real-data telemetry dashboard, a searchable verified-scheme catalogue,
+scheme detail pages, a deterministic eligibility form, live document
+intelligence and an evidence-backed assistant with validated backend citations.
+English, Malayalam and Hindi share one interface and one route structure.
 
 ## Stack
 
@@ -17,7 +17,7 @@ one interface and one route structure.
 - Lucide icons
 - Custom lightweight i18n (no runtime dependency)
 - Oxlint for static checks
-- Vitest + Testing Library for assistant and translation-parity tests
+- Vitest + Testing Library for assistant, dashboard, connected-journey and translation-parity tests
 
 ## Setup
 
@@ -49,7 +49,7 @@ the browser bundle.
 | `npm run build` | Create a production build in `dist/` |
 | `npm run preview` | Preview the production build on port 4173 |
 | `npm run lint` | Run Oxlint |
-| `npm test` | Run Vitest (assistant UI and EN/ML/HI key parity) |
+| `npm test` | Run Vitest (assistant UI, Day 5 integration and EN/ML/HI key parity) |
 
 ## Routes
 
@@ -66,6 +66,12 @@ the browser bundle.
 
 Unknown `/app/*` routes render the 404 page with a route back to the dashboard.
 
+Day 5 uses query parameters only for UI context: `?scheme_id=<id>` on eligibility,
+`?document=<id>` on the assistant and documents pages, and `&page=<n>` when
+inspecting a citation. They survive back/forward navigation, are never sent as
+API fields and never contain profile answers. A cited excerpt is also passed in
+transient router state so it remains visible after a hard reload.
+
 ## Languages
 
 The interface ships in English (`en`), Malayalam (`ml`) and Hindi (`hi`).
@@ -80,10 +86,12 @@ scripts use their own display fonts, never synthetic italics.
 
 Scheme, eligibility and assistant requests send the current language. The
 assistant answer language follows the selector on its page, which updates the
-global app language; switching languages hides an answer generated in the old
-language. Catalog parity is enforced by a committed Vitest test. A live
-eligibility result is re-run
-automatically when the language changes.
+global app language. Day 5 re-asks the last question in the newly selected
+language; if a request is in flight, the re-ask waits until it settles.
+Catalog parity is enforced by a committed Vitest test (640 flattened keys in
+EN, ML and HI). A live eligibility result and any scheme/document context are
+reloaded automatically when the language changes, while the current route and
+query parameters are preserved.
 
 ## Structure
 
@@ -122,12 +130,26 @@ src/
 │   ├── AssistantPage.jsx
 │   └── NotFoundPage.jsx
 ├── services/api.js                # Axios instance and endpoint helpers
+├── test/
+│   ├── AssistantPage.test.jsx     # Filter, recovery, citation and language states
+│   ├── Day5Integration.test.jsx   # Connected journey and honest-state contracts
+│   └── translationParity.test.js  # EN/ML/HI key parity
 ├── App.jsx                        # Route table
 ├── main.jsx                       # BrowserRouter and language bootstrap
 └── index.css                      # Tailwind theme, fonts, wrapping rules
 ```
 
 ## Live screens
+
+### Dashboard
+
+- Live scheme and document totals from the existing `GET /schemes` and
+  `GET /documents` endpoints.
+- Readiness-derived count for the three in-scope core services; Supabase is
+  excluded because it is deferred.
+- Skeleton loading, **Unavailable** on request failure, an empty-library hint
+  and a single retry action. No sample activity or hardcoded count remains.
+- Quick actions for all four live modules with trilingual copy.
 
 ### Scheme catalogue
 
@@ -145,17 +167,43 @@ src/
 - Benefits, documents, application steps, encoded conditions and manual flags.
 - Primary and additional official sources with full URLs.
 - Content note, verification date and substantial-decision disclaimer.
-- Call to action to the eligibility checker.
+- Eligibility CTA carrying `?scheme_id=<encoded-id>` into the checker.
 
 ### Eligibility
 
-- 29 optional fields across five sections, with no Aadhaar, phone, address or
+- 34 optional fields across five sections, with no Aadhaar, phone, address or
   document-number fields.
 - Tri-state yes / no / not sure controls; blank stays unknown.
 - Local validation for whole numbers and ranges before any request is sent.
 - Privacy copy states that answers are evaluated in memory and never saved.
 - Results include outcome counts and filters, per-condition pass/fail/unknown
   explanations, per-route combination status, sources and a disclaimer.
+- A `scheme_id` parameter shows a localised context card, filters the displayed
+  results and offers back/clear/show-all routes. The request payload is still
+  only profile fields plus `language`; no scheme id is added.
+
+### Documents
+
+- Drag-and-drop or picker upload with progress, status, passage counts, detail,
+  confirmation-based deletion and multilingual page-cited search.
+- Search filter and assistant handoff include only `indexed` documents;
+  `needs_ocr` rows are labelled **Not searchable yet**.
+- `?document=<id>` restores a stale or deleted selection with a translated
+  warning instead of sending a doomed request.
+- A citation handoff renders backend-provided title, page, evidence id and
+  excerpt in a source-inspection card. It is not a PDF page preview and adds no
+  metadata.
+
+### Assistant
+
+- Optional document filter stored in `?document=<id>`, refreshed on mount and
+  tab return, with a document-list error/retry notice.
+- The last question is re-asked in the newly selected language; an in-flight
+  answer never overrides the new language.
+- Expandable backend citations show the excerpt, source, evidence id and an
+  **Inspect source** route back to the documents page.
+- Explicit loading, insufficient-evidence, timeout/error and stale-document
+  states; no answer is invented when retrieval or validation fails.
 
 ## API integration
 
@@ -167,7 +215,9 @@ src/
 - Human-readable messages for timeouts, unreachable backends, cancellation, API
   errors and unknown failures.
 - Helpers: `getHealth()`, `getReadiness()`, `getSystemInfo()`, `getSchemes()`,
-  `getScheme()`, `checkEligibility()`, `apiDocsUrl()`.
+  `getScheme()`, `checkEligibility()`, `listDocuments()`, `getDocument()`,
+  `uploadDocument()`, `deleteDocument()`, `searchDocuments()`,
+  `askAssistant()`, `apiDocsUrl()`, `toApiError()` and `isCanceled()`.
 - Empty or undefined query parameters are removed before sending.
 - Requests accept an `AbortSignal`; replaced catalogue requests are aborted and
   cancellation never flashes an error state.
@@ -195,11 +245,13 @@ Tokens are declared in `src/index.css` using Tailwind 4's `@theme`:
   Malayalam / Devanagari for those scripts at display and body sizes.
 - `shadow-soft` and `shadow-lift` elevation tokens.
 
-The layout is verified at 1440 px and 390 px in all three languages. The
-workspace sidebar becomes an accessible drawer below `lg`, and the marketing
-header collapses to a menu button below `md`. Script-aware `overflow-wrap`
-prevents long words from forcing horizontal scrolling, while headings are kept
-to word-boundary breaks where the copy allows it.
+The Day 2 shell was visually verified at 1440 px and 390 px in all three
+languages. Day 5 tests assert mobile-first grid and wrapping classes for the new
+connected views, but no manual browser verification was performed at 1440, 1280,
+768 or 390 px. The workspace sidebar becomes an accessible drawer below `lg`, and
+the marketing header collapses to a menu button below `md`. Script-aware
+`overflow-wrap` prevents long words from forcing horizontal scrolling, while
+headings are kept to word-boundary breaks where the copy allows it.
 
 ## Accessibility
 
@@ -224,12 +276,11 @@ For Vercel: set the project root to `frontend`, build with `npm run build`,
 publish `dist`, and set `VITE_API_BASE_URL` to the deployed API origin. Add an
 SPA rewrite to `index.html` if the host does not handle client-side routes.
 
-Vite reports a chunk-size warning above 500 kB. It is informational on Day 2;
-code-splitting is a later hardening task, not a functional issue.
+Vite reports a chunk-size warning above 500 kB. It is informational; code
+splitting is a later hardening task, not a functional issue.
 
 ## Next milestone
 
-Day 3 adds the document intelligence experience: PDF upload, ingestion status,
-extracted metadata and a reader that keeps page evidence visible. The existing
-`Card`, `Button`, `Badge`, `Skeleton`, `Notice` and `EmptyState` primitives are
-intended to carry that screen without a redesign.
+Day 6 covers evaluation, failure-mode hardening and accessibility/performance
+checks. Day 5 details, validation results and the mocked-versus-live Gemini
+distinction are in [`docs/DAY_5_INTEGRATION.md`](../docs/DAY_5_INTEGRATION.md).

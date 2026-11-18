@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   CircleCheck,
+  FileSearch,
   FileText,
   Info,
   Languages,
@@ -21,72 +23,145 @@ import Notice from '@/components/ui/Notice'
 import ModuleHeader from '@/components/workspace/ModuleHeader'
 import { ShieldMark } from '@/components/brand/Logo'
 import { LANGUAGES, useLanguage, useMessages } from '@/i18n'
-import { askAssistant, listDocuments } from '@/services/api'
+import { askAssistant, listDocuments, toApiError } from '@/services/api'
 
 const TRUST_ICONS = [ShieldCheck, Languages, CircleCheck]
 
 export default function AssistantPage() {
   const { language, setLanguage, t } = useLanguage()
   const copy = useMessages()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedDocumentId = searchParams.get('document') || ''
+
   const [draft, setDraft] = useState('')
-  const [documentId, setDocumentId] = useState('')
-  const [documents, setDocuments] = useState([])
+  const [allDocuments, setAllDocuments] = useState([])
+  const [documentStatus, setDocumentStatus] = useState('loading')
+  const [staleNotice, setStaleNotice] = useState(null)
   const [result, setResult] = useState(null)
   const [lastQuestion, setLastQuestion] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState(null)
+  const previousLanguageRef = useRef(language)
+  const languageRef = useRef(language)
+  const busyRef = useRef(false)
+  const languageRetryRef = useRef(false)
+  languageRef.current = language
 
-  // An answer is only shown for the language it was generated in. Changing
-  // the global language therefore hides it without needing a state effect.
-  const visibleResult = result?.language === language ? result : null
+  const indexedDocuments = allDocuments.filter(
+    (document) => document.status === 'indexed',
+  )
 
-  // The optional document filter never blocks asking a question.
-  useEffect(() => {
-    let active = true
-    listDocuments()
-      .then((data) => {
-        if (!active) return
-        const indexed = (data?.documents ?? []).filter(
-          (document) => document.status === 'indexed',
-        )
-        setDocuments(indexed)
-        setDocumentId((current) =>
-          indexed.some((document) => document.document_id === current)
-            ? current
-            : '',
-        )
-      })
-      .catch(() => {
-        if (active) setDocuments([])
-      })
-    return () => {
-      active = false
+  const clearDocumentParam = useCallback(() => {
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous)
+        next.delete('document')
+        return next
+      },
+      { replace: true },
+    )
+  }, [setSearchParams])
+
+  const loadDocuments = useCallback(async () => {
+    setDocumentStatus('loading')
+    try {
+      const data = await listDocuments()
+      const documents = data?.documents ?? []
+      setAllDocuments(documents)
+      setDocumentStatus('ready')
+      return documents
+    } catch {
+      setAllDocuments([])
+      setDocumentStatus('error')
+      return []
     }
   }, [])
 
+  useEffect(() => {
+    loadDocuments()
+  }, [loadDocuments])
+
+  useEffect(() => {
+    const refreshOnReturn = () => {
+      if (document.visibilityState === 'visible') loadDocuments()
+    }
+    document.addEventListener('visibilitychange', refreshOnReturn)
+    return () => document.removeEventListener('visibilitychange', refreshOnReturn)
+  }, [loadDocuments])
+
+  useEffect(() => {
+    if (!selectedDocumentId) {
+      setStaleNotice(null)
+      return
+    }
+    if (documentStatus !== 'ready') return
+
+    const target = allDocuments.find(
+      (document) => document.document_id === selectedDocumentId,
+    )
+    if (!target) {
+      setStaleNotice('missing')
+      clearDocumentParam()
+      return
+    }
+    if (target.status !== 'indexed') {
+      setStaleNotice('not_indexed')
+      clearDocumentParam()
+      return
+    }
+    setStaleNotice(null)
+  }, [allDocuments, clearDocumentParam, documentStatus, selectedDocumentId])
+
   const submit = async (questionText) => {
     const question = questionText.trim()
-    if (!question || busy) return
+    if (!question || busyRef.current) return
 
+    busyRef.current = true
     setLastQuestion(question)
     setBusy(true)
-    setError(false)
+    setError(null)
     setResult(null)
 
     try {
       const data = await askAssistant({
         question,
-        language,
-        document_id: documentId || null,
+        language: languageRef.current,
+        document_id: selectedDocumentId || null,
       })
       setResult(data)
-    } catch {
-      // The API envelope is already sanitised server-side; show generic copy.
-      setError(true)
+    } catch (caught) {
+      const apiError = toApiError(caught)
+      if (apiError.code === 'document_not_found' && selectedDocumentId) {
+        setStaleNotice('missing')
+        clearDocumentParam()
+        loadDocuments()
+      } else {
+        setError(apiError)
+      }
     } finally {
+      busyRef.current = false
       setBusy(false)
+      if (languageRetryRef.current && question) {
+        languageRetryRef.current = false
+        submit(question)
+      }
     }
   }
+
+  useEffect(() => {
+    if (language === previousLanguageRef.current) return
+    previousLanguageRef.current = language
+    setResult(null)
+    setError(null)
+    if (!lastQuestion) return
+    if (busyRef.current) {
+      languageRetryRef.current = true
+      return
+    }
+    submit(lastQuestion)
+    // Re-ask the last question in the newly selected language only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language])
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -97,10 +172,28 @@ export default function AssistantPage() {
 
   const reset = () => {
     setResult(null)
-    setError(false)
+    setError(null)
     setLastQuestion('')
     setDraft('')
   }
+
+  const selectDocument = (documentId) => {
+    setStaleNotice(null)
+    if (!documentId) {
+      clearDocumentParam()
+      return
+    }
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous)
+        next.set('document', documentId)
+        return next
+      },
+      { replace: true },
+    )
+  }
+
+  const visibleResult = result
 
   return (
     <div>
@@ -119,6 +212,43 @@ export default function AssistantPage() {
       >
         {copy.assistant.noticeCopy}
       </Notice>
+
+      {documentStatus === 'error' ? (
+        <Notice
+          tone="warning"
+          title={copy.assistant.documentsErrorTitle}
+          className="mt-3"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>{copy.assistant.documentsErrorCopy}</span>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={loadDocuments}
+            >
+              <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.assistant.documentsRetry}
+            </Button>
+          </div>
+        </Notice>
+      ) : null}
+
+      {staleNotice ? (
+        <Notice
+          tone="warning"
+          title={
+            staleNotice === 'missing'
+              ? copy.assistant.staleTitle
+              : copy.assistant.notIndexedTitle
+          }
+          className="mt-3"
+        >
+          {staleNotice === 'missing'
+            ? copy.assistant.staleCopy
+            : copy.assistant.notIndexedCopy}
+        </Notice>
+      ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_19rem]">
         <Card className="flex min-h-[34rem] flex-col overflow-hidden">
@@ -181,12 +311,12 @@ export default function AssistantPage() {
               </label>
               <select
                 id="assistant-document"
-                value={documentId}
-                onChange={(event) => setDocumentId(event.target.value)}
+                value={selectedDocumentId}
+                onChange={(event) => selectDocument(event.target.value)}
                 className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-cream-50 px-2.5 text-xs text-ink-800"
               >
                 <option value="">{copy.assistant.documentAll}</option>
-                {documents.map((document) => (
+                {indexedDocuments.map((document) => (
                   <option
                     key={document.document_id}
                     value={document.document_id}
@@ -314,12 +444,41 @@ export default function AssistantPage() {
                             </span>
                           </summary>
                           <div className="border-t border-teal-200/70 px-3 py-2.5">
-                            <p className="border-l-2 border-teal-300 pl-2.5 text-[11.5px] italic leading-relaxed text-ink-600">
+                            <p className="whitespace-pre-wrap break-words border-l-2 border-teal-300 pl-2.5 text-[11.5px] italic leading-relaxed text-ink-600">
                               {citation.excerpt}
                             </p>
-                            <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-teal-700">
-                              {copy.assistant.sourceLabel}
-                            </p>
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-teal-200/70 pt-2.5">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-teal-700">
+                                  {copy.assistant.sourceLabel}
+                                </p>
+                                {citation.evidence_id ? (
+                                  <span className="text-[10px] text-ink-400">
+                                    {t('assistant.citationId', {
+                                      id: citation.evidence_id,
+                                    })}
+                                  </span>
+                                ) : null}
+                              </div>
+                              {citation.document_id ? (
+                                <Button
+                                  as={Link}
+                                  to={`/app/documents?document=${encodeURIComponent(
+                                    citation.document_id,
+                                  )}&page=${encodeURIComponent(citation.page)}`}
+                                  state={{ citation }}
+                                  variant="secondary"
+                                  size="sm"
+                                  className="h-7 px-2.5 text-[11px]"
+                                >
+                                  <FileSearch
+                                    className="h-3 w-3"
+                                    aria-hidden="true"
+                                  />
+                                  {copy.assistant.inspectSource}
+                                </Button>
+                              ) : null}
+                            </div>
                           </div>
                         </details>
                       ))}

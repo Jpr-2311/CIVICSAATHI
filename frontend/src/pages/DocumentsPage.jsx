@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import {
   FileSearch,
   FileText,
   Info,
   LockKeyhole,
+  MessagesSquare,
   Plus,
   Search,
   ShieldCheck,
@@ -59,6 +61,10 @@ export default function DocumentsPage() {
   const { t, locale } = useLanguage()
   const copy = useMessages().documents
   const inputRef = useRef(null)
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const focusDocumentId = searchParams.get('document') || ''
+  const citation = location.state?.citation ?? null
 
   const [documents, setDocuments] = useState([])
   const [loadingList, setLoadingList] = useState(true)
@@ -172,18 +178,22 @@ export default function DocumentsPage() {
     event.target.value = ''
   }
 
-  const openDetails = async (document) => {
-    setSelected(document)
-    setDetailsLoading(true)
-    setActionError(null)
-    try {
-      setSelected(await getDocument(document.document_id))
-    } catch (error) {
-      setActionError(toApiError(error).message)
-    } finally {
-      setDetailsLoading(false)
-    }
-  }
+  const openDetails = useCallback(
+    async (document) => {
+      setSelected(document)
+      setDetailsLoading(true)
+      setActionError(null)
+      try {
+        setSelected(await getDocument(document.document_id))
+      } catch (error) {
+        setSelected(null)
+        setActionError(toApiError(error).message)
+      } finally {
+        setDetailsLoading(false)
+      }
+    },
+    [],
+  )
 
   const confirmDelete = async () => {
     if (!pendingDelete) return
@@ -227,6 +237,48 @@ export default function DocumentsPage() {
     }
   }
 
+  const indexedDocuments = documents.filter(
+    (document) => document.status === 'indexed',
+  )
+  const hasIndexedDocuments = indexedDocuments.length > 0
+
+  useEffect(() => {
+    if (filterId && !indexedDocuments.some((doc) => doc.document_id === filterId)) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setFilterId('')
+    }
+  }, [documents, filterId, indexedDocuments])
+
+  useEffect(() => {
+    if (!focusDocumentId || loadingList || listError) return
+    const target = documents.find(
+      (document) => document.document_id === focusDocumentId,
+    )
+    if (target) {
+      if (selected?.document_id !== focusDocumentId) {
+        // oxlint-disable-next-line react/set-state-in-effect
+        openDetails(target)
+      }
+    } else {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setActionError(copy.citationMissingCopy)
+    }
+  }, [
+    copy.citationMissingCopy,
+    documents,
+    focusDocumentId,
+    listError,
+    loadingList,
+    openDetails,
+    selected?.document_id,
+  ])
+
+  const closeSourceInspection = () => {
+    setSearchParams({}, { replace: true })
+    setSelected(null)
+    setActionError(null)
+  }
+
   return (
     <div>
       <ModuleHeader
@@ -255,6 +307,87 @@ export default function DocumentsPage() {
         <Notice tone="danger" className="mt-3">
           {actionError}
         </Notice>
+      ) : null}
+
+      {hasIndexedDocuments && !citation ? (
+        <Notice tone="success" className="mt-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>{copy.assistantHint}</span>
+            <Button
+              as={Link}
+              to="/app/assistant"
+              variant="secondary"
+              size="sm"
+            >
+              <MessagesSquare className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.askAssistant}
+            </Button>
+          </div>
+        </Notice>
+      ) : null}
+
+      {citation ? (
+        <Card className="mt-4 border-teal-200 bg-teal-50/40 p-5 sm:p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-teal-700 ring-1 ring-inset ring-teal-200">
+                <FileSearch className="h-[18px] w-[18px]" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-brand-950">
+                  {copy.citationTitle}
+                </h2>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-ink-500">
+                  {copy.citationCopy}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={closeSourceInspection}
+              className="grid h-8 w-8 place-items-center rounded-lg text-ink-400 transition hover:bg-white hover:text-brand-950"
+              aria-label={copy.closeDetails}
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge tone="teal">
+              {copy.citationPageLabel.replace('{page}', citation.page)}
+            </Badge>
+            {citation.evidence_id ? (
+              <Badge tone="neutral">
+                {copy.citationEvidence.replace('{id}', citation.evidence_id)}
+              </Badge>
+            ) : null}
+            <Badge tone="brand">{citation.document_title}</Badge>
+          </div>
+
+          <blockquote className="mt-4 whitespace-pre-wrap break-words rounded-xl border-l-2 border-teal-300 bg-white px-4 py-3 text-sm leading-relaxed text-ink-700">
+            {citation.excerpt}
+          </blockquote>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-teal-200/70 pt-3">
+            <Button
+              as={Link}
+              to="/app/assistant"
+              variant="secondary"
+              size="sm"
+            >
+              <MessagesSquare className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.backToAssistant}
+            </Button>
+            {focusDocumentId && !selected ? (
+              <p className="text-[11px] text-ink-500">
+                <span className="font-semibold text-amber-800">
+                  {copy.citationMissingTitle}
+                </span>{' '}
+                {copy.citationMissingCopy}
+              </p>
+            ) : null}
+          </div>
+        </Card>
       ) : null}
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_19rem]">
@@ -443,6 +576,26 @@ export default function DocumentsPage() {
                       <FileSearch className="h-3.5 w-3.5" aria-hidden="true" />
                       {copy.detailsTitle}
                     </Button>
+                    {document.status === 'indexed' ? (
+                      <Button
+                        as={Link}
+                        to={`/app/assistant?document=${encodeURIComponent(
+                          document.document_id,
+                        )}`}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        <MessagesSquare
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
+                        {copy.askAssistantIndexed}
+                      </Button>
+                    ) : (
+                      <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-amber-700">
+                        {copy.notSearchable}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => setPendingDelete(document)}
@@ -564,7 +717,7 @@ export default function DocumentsPage() {
                 className="h-11 rounded-xl border border-ink-200 bg-cream-50 px-3 text-sm text-ink-800 focus:border-brand-400 focus:bg-white"
               >
                 <option value="">{copy.filterAll}</option>
-                {documents.map((document) => (
+                {indexedDocuments.map((document) => (
                   <option key={document.document_id} value={document.document_id}>
                     {document.original_filename}
                   </option>

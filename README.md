@@ -6,11 +6,12 @@ A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
 into clear, verifiable guidance in English, Malayalam or Hindi.
 
-> **Build status: Day 4 of 7 complete.** The foundation, live telemetry, a
+> **Build status: Day 5 of 7 complete.** The foundation, live telemetry, a
 > corrected and re-verified 15-scheme catalogue, a deterministic eligibility
 > engine, a live document-intelligence pipeline and an evidence-grounded
-> multilingual assistant are wired end to end. Automated tests mock Gemini by
-> default; a live Gemini call is a separate opt-in check, not a default test.
+> multilingual assistant are now connected into one trilingual journey.
+> Automated tests mock Gemini by default; a live Gemini call is a separate
+> opt-in check, not a default test.
 
 Built for **NxtWave IDEA//FORGE — Civic Pulse track**.
 
@@ -34,7 +35,7 @@ CIVICSAATHI AI takes the opposite approach:
 
 ## What works today
 
-| Area | Day 4 state |
+| Area | Day 5 state |
 | --- | --- |
 | Marketing site | Responsive landing page with trilingual answer preview, problem framing, workflow and trust sections |
 | Workspace | Dashboard shell, sidebar, mobile drawer, live module labels, 404 page |
@@ -45,14 +46,18 @@ CIVICSAATHI AI takes the opposite approach:
 | Document intelligence | Secure PDF upload, PyMuPDF extraction, page-aware overlapping chunks, multilingual embeddings, persistent ChromaDB search with page citations |
 | Backend | FastAPI app with typed settings, CORS, logging, lifespan state, threadpool document work and consistent error envelopes |
 | Assistant | Gemini-backed answers grounded in retrieved passages, EN/ML/HI output, validated backend citations and honest insufficient-evidence states |
-| Failure states | Skeletons, offline banner, retry actions, 404 handling, upload progress, assistant timeout/error states and stale-data protection |
-| Quality | 229 backend tests passing (2 gated), 9 frontend tests, Ruff/Oxlint clean, production frontend build succeeds |
+| Connected journey | Real dashboard counts, scheme→eligibility context, indexed document→assistant handoff, source inspection and language-preserving navigation |
+| Failure states | Skeletons, honest unavailable totals, stale-context recovery, offline banner, retry actions, 404 handling, upload progress and assistant timeout/error states |
+| Quality | 233 backend tests passing (3 gated), 20 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
 
 Document intelligence is live in English, Malayalam and Hindi. The assistant is
 also live in all three languages once `GEMINI_API_KEY` is configured: it retrieves
 first, answers only from that evidence, and says when the documents do not contain
 the answer. Without a key, `/api/v1/assistant/ask` returns a safe `503` while
-document search keeps working. See [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md).
+document search keeps working. See [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md)
+for the assistant design and
+[`docs/DAY_5_INTEGRATION.md`](docs/DAY_5_INTEGRATION.md) for the connected
+journey, validation results and live-check limitations.
 
 ## Screenshots
 
@@ -168,7 +173,7 @@ question → validation → language + optional document filter
   capped; the request has a timeout and errors map to safe `detail`/`code`
   envelopes. Nothing is persisted.
 
-Remaining milestones: trilingual evaluation and polish (Day 5–6), deployment
+Remaining milestones: hardening and evaluation (Day 6), deployment and demo
 (Day 7). Supabase persistence is deferred;
 the validated JSON repository and ChromaDB store are the active providers and
 the seams for a future database.
@@ -204,7 +209,7 @@ CIVICSAATHI-AI/
 │   │   ├── routes/                # health, system, schemes, eligibility, documents, assistant
 │   │   ├── services/              # rules, readiness, document pipeline, Gemini, assistant RAG
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── tests/                     # 229 unit/API tests + gated integration tests
+│   ├── tests/                     # 233 unit/API tests + gated integration tests
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── README.md
@@ -226,6 +231,7 @@ CIVICSAATHI-AI/
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DAY_4_GEMINI.md
+│   ├── DAY_5_INTEGRATION.md
 │   └── screenshots/
 └── README.md
 ```
@@ -296,6 +302,12 @@ offline state if the backend is not running.
 | <http://127.0.0.1:8000/api/v1/schemes> | 15 curated schemes, paginated |
 | <http://127.0.0.1:8000/api/v1/documents> | Empty list before the first upload |
 | <http://127.0.0.1:8000/api/v1/health/readiness> | `degraded` while Supabase is unconfigured; dataset, vector store and assistant features are `ok`/`live` |
+
+The connected shortcuts are
+`/app/schemes/<id> → /app/eligibility?scheme_id=<id>` and an indexed PDF on
+`/app/documents → /app/assistant?document=<id>`. Expanding an assistant citation
+returns to `/app/documents?document=<id>&page=<n>` with the cited excerpt. These
+are UI state handoffs only; no profile value is placed in a URL.
 
 Readiness remains expectedly `degraded` while Supabase is intentionally
 unconfigured. Gemini is reported `ok` only when a key is present; this checks
@@ -374,7 +386,9 @@ is a normal `200` with a message, never fabricated data.
 ```
 
 Eligibility accepts only allowlisted profile fields and rejects unknown fields.
-Every answer is optional; omitted answers remain `unknown`. Responses return
+The Day 5 `?scheme_id=<id>` browser handoff is not an API field: adding
+`scheme_id` to the JSON body still returns `422 validation_error`. Every answer
+is optional; omitted answers remain `unknown`. Responses return
 condition statuses and supplied field *names*, never the values. Outcomes are
 `potentially_eligible`, `ineligible`, `insufficient_information` or
 `manual_review` — never a bare `eligible`.
@@ -444,12 +458,15 @@ npm test
 npm run build
 ```
 
-Current Day 4 result: **229 backend tests pass** with 2 gated integration
-tests skipped, **9 frontend tests pass**, Ruff and Oxlint are clean and the Vite
-production build completes. Gemini is mocked in the default suite; the live test
-is opt-in and no prompt, answer or key is logged. Screenshots of the Day 1/2
-shell were verified at 1440 px and 390 px in all three languages with zero
-horizontal overflow.
+Current Day 5 result: **233 backend tests pass** with 3 gated integration
+tests skipped, **20 frontend tests pass**, Ruff and Oxlint are clean, EN/ML/HI
+catalogs have identical 640-key sets and the Vite production build completes.
+Gemini is mocked in the default suite; the two opt-in live checks were retried
+but blocked by an outbound TLS handshake timeout, so live validation is not
+claimed as passing. No prompt, answer or key is logged. Screenshots of the
+Day 1/2 shell were verified at 1440 px and 390 px in all three languages with
+zero horizontal overflow; the new Day 5 layouts are covered by tests and a
+production build, not manual browser inspection.
 
 ## Roadmap
 
@@ -459,7 +476,7 @@ horizontal overflow.
 | 2 | Schemes & eligibility | 15-scheme verified catalogue, search and deterministic rules engine |
 | 3 | Document intelligence | PDF upload/extraction, page-aware chunking, multilingual embeddings, ChromaDB retrieval with page citations |
 | 4 | Evidence-backed assistant | Complete: Gemini RAG in EN/ML/HI with validated page citations |
-| 5 | Trilingual journey | Full English, Malayalam and Hindi experience and end-to-end UX polish |
+| 5 | Trilingual journey | Complete: connected EN/ML/HI journey with honest states and source inspection |
 | 6 | Hardening | Evaluation set, failure-mode tests, accessibility and performance |
 | 7 | Deploy & demo | Vercel + Render deployment, demo script, submission assets |
 

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import LanguageProvider from '@/i18n/LanguageProvider'
@@ -8,7 +9,23 @@ import { askAssistant, listDocuments } from '@/services/api'
 vi.mock('@/services/api', () => ({
   askAssistant: vi.fn(),
   listDocuments: vi.fn(),
+  toApiError: vi.fn((error) => ({
+    message: error?.message ?? 'API error',
+    code: error?.code ?? error?.response?.data?.code ?? null,
+    status: error?.response?.status ?? null,
+  })),
 }))
+
+function LocationProbe() {
+  const location = useLocation()
+  return (
+    <div
+      data-testid="router-location"
+      data-search={location.search}
+      data-state={JSON.stringify(location.state ?? null)}
+    />
+  )
+}
 
 const grounded = {
   answer: 'Submit an income certificate to the village office.',
@@ -29,11 +46,25 @@ const grounded = {
   similarity_notice: 'Similarity notice.',
 }
 
-function renderPage() {
+function renderPage({ route = '/app/assistant' } = {}) {
   return render(
-    <LanguageProvider>
-      <AssistantPage />
-    </LanguageProvider>,
+    <MemoryRouter initialEntries={[route]}>
+      <LanguageProvider>
+        <Routes>
+          <Route
+            path="/app/assistant"
+            element={
+              <>
+                <AssistantPage />
+                <LocationProbe />
+              </>
+            }
+          />
+          <Route path="/app/documents" element={<LocationProbe />} />
+          <Route path="*" element={<LocationProbe />} />
+        </Routes>
+      </LanguageProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -166,5 +197,142 @@ describe('AssistantPage', () => {
         expect.objectContaining({ document_id: 'doc-1' }),
       ),
     )
+  })
+
+  it('recovers from a stale document selection in the URL', async () => {
+    listDocuments.mockResolvedValue({
+      documents: [
+        {
+          document_id: 'doc-1',
+          original_filename: 'farm-notice.pdf',
+          status: 'indexed',
+        },
+      ],
+    })
+    renderPage({ route: '/app/assistant?document=deleted-doc' })
+
+    await waitFor(() =>
+      expect(screen.getByText('That document is no longer available')).toBeTruthy(),
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('router-location').dataset.search).toBe(''),
+    )
+    ask()
+    await waitFor(() =>
+      expect(askAssistant).toHaveBeenCalledWith(
+        expect.objectContaining({ document_id: null }),
+      ),
+    )
+  })
+
+  it('recovers when the backend reports document_not_found', async () => {
+    listDocuments.mockResolvedValue({
+      documents: [
+        {
+          document_id: 'doc-1',
+          original_filename: 'farm-notice.pdf',
+          status: 'indexed',
+        },
+      ],
+    })
+    askAssistant.mockRejectedValueOnce({
+      response: { status: 404, data: { code: 'document_not_found' } },
+    })
+    renderPage({ route: '/app/assistant?document=doc-1' })
+    await waitFor(() =>
+      expect(
+        screen.getByRole('option', { name: 'farm-notice.pdf' }),
+      ).toBeTruthy(),
+    )
+
+    ask()
+    await waitFor(() =>
+      expect(screen.getByText('That document is no longer available')).toBeTruthy(),
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('router-location').dataset.search).toBe(''),
+    )
+    expect(screen.queryByText('The assistant could not answer')).toBeNull()
+  })
+
+  it('links a citation to an in-app source inspection with backend metadata', async () => {
+    askAssistant.mockResolvedValue(grounded)
+    renderPage()
+    ask()
+
+    const link = await screen.findByRole('link', { name: 'Inspect source' })
+    expect(link.getAttribute('href')).toBe(
+      '/app/documents?document=doc-1&page=4',
+    )
+    const state = JSON.parse(
+      screen.getByTestId('router-location').dataset.state ?? 'null',
+    )
+    expect(state).toBeNull()
+
+    fireEvent.click(link)
+    await waitFor(() => {
+      const location = screen.getByTestId('router-location')
+      expect(location.dataset.search).toBe('?document=doc-1&page=4')
+      expect(JSON.parse(location.dataset.state).citation.document_id).toBe(
+        'doc-1',
+      )
+    })
+  })
+
+  it('shows a retryable notice when indexed documents cannot be loaded', async () => {
+    listDocuments.mockRejectedValueOnce(new Error('network down'))
+    listDocuments.mockResolvedValueOnce({ documents: [] })
+    renderPage()
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Indexed documents could not be loaded'),
+      ).toBeTruthy(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Retry document list' }))
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Indexed documents could not be loaded'),
+      ).toBeNull(),
+    )
+    expect(listDocuments).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps document context when the language changes and re-asks the question', async () => {
+    listDocuments.mockResolvedValue({
+      documents: [
+        {
+          document_id: 'doc-1',
+          original_filename: 'farm-notice.pdf',
+          status: 'indexed',
+        },
+      ],
+    })
+    askAssistant
+      .mockResolvedValueOnce(grounded)
+      .mockResolvedValueOnce({
+        ...grounded,
+        language: 'ml',
+        answer: 'Malayalam answer from the same passage.',
+      })
+    renderPage({ route: '/app/assistant?document=doc-1' })
+    await screen.findByRole('option', { name: 'farm-notice.pdf' })
+
+    ask('What documents are required?')
+    await screen.findByText(grounded.answer)
+    fireEvent.change(screen.getByLabelText('Answer language'), {
+      target: { value: 'ml' },
+    })
+
+    await waitFor(() => expect(askAssistant).toHaveBeenCalledTimes(2))
+    expect(askAssistant.mock.calls[1][0]).toEqual({
+      question: 'What documents are required?',
+      language: 'ml',
+      document_id: 'doc-1',
+    })
+    expect(screen.getByTestId('router-location').dataset.search).toBe(
+      '?document=doc-1',
+    )
+    await screen.findByText('Malayalam answer from the same passage.')
   })
 })

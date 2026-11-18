@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import {
   Activity,
@@ -24,7 +25,7 @@ import PageHeader from '@/components/ui/PageHeader'
 import Skeleton from '@/components/ui/Skeleton'
 import StatusDot from '@/components/ui/StatusDot'
 import { LANGUAGES, useLanguage, useMessages } from '@/i18n'
-import { API_PREFIX, apiBaseUrl } from '@/services/api'
+import { API_PREFIX, apiBaseUrl, getSchemes, listDocuments } from '@/services/api'
 import { cn } from '@/lib/cn'
 
 const QUICK_ACTIONS = [
@@ -39,7 +40,7 @@ const QUICK_ACTIONS = [
     id: 'assistant',
     to: '/app/assistant',
     icon: MessagesSquare,
-    status: 'preview',
+    status: 'live',
   },
   { id: 'documents', to: '/app/documents', icon: FileText, status: 'live' },
 ]
@@ -50,12 +51,67 @@ const READINESS_TONES = {
   not_ready: 'danger',
 }
 
+const CORE_SERVICE_IDS = ['scheme_dataset', 'vector_store', 'gemini']
+
+const EMPTY_COUNTS = {
+  schemes: { status: 'loading', value: null },
+  documents: { status: 'loading', value: null },
+}
+
 export default function DashboardPage() {
   const { system } = useOutletContext()
   const { state, refresh, refreshing } = system
   const { health, readiness, latencyMs, error, status } = state
   const { t, language, locale, setLanguage } = useLanguage()
   const copy = useMessages()
+  const [counts, setCounts] = useState(EMPTY_COUNTS)
+  const [refreshingCounts, setRefreshingCounts] = useState(false)
+  const mountedRef = useRef(true)
+
+  const loadCounts = useCallback(async () => {
+    setRefreshingCounts(true)
+    setCounts(EMPTY_COUNTS)
+
+    const update = (key) => (result) => {
+      if (!mountedRef.current) return
+      setCounts((previous) => ({
+        ...previous,
+        [key]: {
+          status: result.status,
+          value: result.status === 'ready' ? result.value : null,
+        },
+      }))
+    }
+
+    await Promise.all([
+      getSchemes({ page: 1, page_size: 1, language })
+        .then((data) => ({ status: 'ready', value: data.total ?? 0 }))
+        .catch(() => ({ status: 'error', value: null }))
+        .then(update('schemes')),
+      listDocuments()
+        .then((data) => ({
+          status: 'ready',
+          value: data.documents?.length ?? data.total ?? 0,
+        }))
+        .catch(() => ({ status: 'error', value: null }))
+        .then(update('documents')),
+    ])
+
+    if (mountedRef.current) setRefreshingCounts(false)
+  }, [language])
+
+  useEffect(() => {
+    mountedRef.current = true
+    // oxlint-disable-next-line react/set-state-in-effect
+    loadCounts()
+    return () => {
+      mountedRef.current = false
+    }
+  }, [loadCounts])
+
+  const readyServices = CORE_SERVICE_IDS.filter(
+    (id) => readiness?.checks?.some((check) => check.id === id && check.status === 'ok'),
+  ).length
 
   const checkedLabel = state.checkedAt
     ? new Date(state.checkedAt).toLocaleTimeString(locale, {
@@ -209,6 +265,89 @@ export default function DashboardPage() {
           })}
         </div>
       </section>
+
+      <Card className="mt-4 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700">
+              <Layers className="h-[18px] w-[18px]" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="text-sm font-semibold text-brand-950">
+                {copy.dashboard.services.title}
+              </h2>
+              <p className="mt-1 text-xs leading-relaxed text-ink-500">
+                {copy.dashboard.services.copy}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={loadCounts}
+            loading={refreshingCounts}
+          >
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+            {copy.dashboard.services.retry}
+          </Button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            {
+              key: 'schemes',
+              label: copy.dashboard.services.schemes,
+              count: counts.schemes,
+              hint: null,
+            },
+            {
+              key: 'documents',
+              label: copy.dashboard.services.documents,
+              count: counts.documents,
+              hint:
+                counts.documents.status === 'ready' && counts.documents.value === 0
+                  ? copy.dashboard.services.emptyDocuments
+                  : null,
+            },
+            {
+              key: 'features',
+              label: copy.dashboard.services.features,
+              count:
+                status === 'error' || !readiness
+                  ? { status: 'error', value: null }
+                  : status === 'loading'
+                    ? { status: 'loading', value: null }
+                    : { status: 'ready', value: `${readyServices} / ${CORE_SERVICE_IDS.length}` },
+              hint: null,
+            },
+          ].map((metric) => (
+            <div
+              key={metric.key}
+              className="rounded-xl border border-ink-200/70 bg-cream-50 px-4 py-3.5"
+            >
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-400">
+                {metric.label}
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-brand-950">
+                {metric.count.status === 'loading' ? (
+                  <Skeleton className="h-7 w-14" />
+                ) : metric.count.status === 'error' ? (
+                  <span className="text-base text-ink-400">
+                    {copy.dashboard.services.unavailable}
+                  </span>
+                ) : (
+                  metric.count.value
+                )}
+              </p>
+              {metric.hint ? (
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-500">
+                  {metric.hint}
+                </p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5 lg:items-start">
         <Card className="p-5 sm:p-6 lg:col-span-3">
@@ -391,7 +530,7 @@ export default function DashboardPage() {
               {copy.dashboard.plan.nextLabel}
             </p>
             <h2 className="mt-2 font-display text-2xl leading-tight text-cream-50">
-              {copy.dashboard.plan.items[3].title}
+              {copy.dashboard.plan.items[4].title}
             </h2>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-cream-200/70">
               {copy.dashboard.plan.nextCopy}

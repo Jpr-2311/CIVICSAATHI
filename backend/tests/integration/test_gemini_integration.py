@@ -1,6 +1,6 @@
 """Opt-in LIVE Gemini integration test. Never runs in the default suite.
 
-Run only when you deliberately want to spend a real API call:
+Run only when you deliberately want to spend real API calls:
 
     CIVICSAATHI_RUN_GEMINI_TESTS=1 pytest tests/integration/test_gemini_integration.py -q
 
@@ -63,3 +63,45 @@ def test_live_gemini_grounded_answer_with_valid_citation(tmp_path):
         for citation in response.citations
     )
     assert response.insufficient_evidence is False
+
+
+def test_live_gemini_filtered_multilingual_answer_with_valid_citation(tmp_path):
+    settings = get_settings()
+    if not settings.gemini_configured:
+        pytest.skip("GEMINI_API_KEY is not configured.")
+
+    store = DocumentStore(
+        tmp_path / "store-ml",
+        tmp_path / "chroma-ml",
+        "civicsaathi_gemini_live_test_ml",
+    )
+    documents = DocumentService(store, settings, embedder=FakeEmbedder())
+    uploaded = documents.ingest(filename="live-farm-notice-ml.pdf", content=FARM_PDF)
+
+    gemini = GeminiService(
+        api_key=settings.gemini_api_key.get_secret_value(),
+        model=settings.gemini_model,
+        timeout=settings.assistant_request_timeout_seconds,
+        max_output_tokens=settings.assistant_max_output_tokens,
+    )
+    service = AssistantService(documents, gemini, settings)
+    response = service.ask(
+        AssistantAskRequest(
+            question="കർഷകൻ ഏത് രേഖകൾ സമർപ്പിക്കണം?",
+            language="ml",
+            document_id=uploaded.document.document_id,
+        )
+    )
+
+    assert response.language == "ml"
+    assert response.insufficient_evidence is False
+    assert response.citations
+    assert all(
+        citation.document_id == uploaded.document.document_id
+        for citation in response.citations
+    )
+    assert all(
+        citation.document_title == "live-farm-notice-ml.pdf"
+        for citation in response.citations
+    )
+    assert all(citation.page >= 1 for citation in response.citations)
