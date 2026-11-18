@@ -250,7 +250,9 @@ def test_corrected_rules_include_every_new_condition(dataset: SchemeDataset) -> 
     } <= pmay
 
     pmjay = _scheme(dataset, "pm-jay")
-    assert all("indian_citizen" in _route_ids(pmjay, i) for i in range(2))
+    assert _route_ids(pmjay, 0) == {"age_70_or_above"}
+    assert _route_ids(pmjay, 1) == {"manual_pmjay_secc"}
+    assert all("indian_citizen" not in _route_ids(pmjay, i) for i in range(2))
 
     snehapoorvam = _scheme(dataset, "snehapoorvam")
     for i in range(3):
@@ -321,6 +323,16 @@ def test_corrected_editorial_wording_is_localised(dataset: SchemeDataset) -> Non
         assert _scheme(dataset, scheme_id).verified_on.isoformat() == "2026-11-18"
     for scheme_id in ("pm-vishwakarma", "mgnrega", "vayomithram"):
         assert _scheme(dataset, scheme_id).verified_on.isoformat() == "2026-11-16"
+
+
+def test_pm_jay_wording_does_not_claim_an_official_citizenship_bar(
+    dataset: SchemeDataset,
+) -> None:
+    pmjay = _scheme(dataset, "pm-jay")
+
+    assert "Indian citizens" not in pmjay.description.en
+    assert "ഇന്ത്യൻ പൗരന്മാർക്ക്" not in pmjay.description.ml
+    assert "भारतीय नागरिकों" not in pmjay.description.hi
 
 
 def test_repository_loads_and_caches_the_validated_dataset() -> None:

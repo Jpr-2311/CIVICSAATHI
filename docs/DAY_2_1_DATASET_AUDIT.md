@@ -10,6 +10,10 @@ companion to the dataset policy in
 [`data/sample_schemes/README.md`](../data/sample_schemes/README.md) and the
 system design in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
+A follow-up verification of the PM-JAY citizenship condition was performed
+after this audit was committed; its evidence and decision are recorded in
+§9. The rule change in §9 supersedes the citizenship part of §3.4.
+
 ---
 
 ## 1. Audit result at a glance
@@ -165,8 +169,12 @@ Official basis: Kerala Social Security Mission (`socialsecuritymission.gov.in`).
 
 ### 3.4 AB PM-JAY (`pm-jay`)
 
-- Added **Indian citizenship** to both routes, so a non-citizen is now
-  correctly `ineligible` rather than potentially eligible.
+- Added **Indian citizenship** to both routes in the committed Day 2.1 audit.
+  The follow-up verification (§9) could not establish any explicit official
+  provision for it, so the condition was removed again. Both routes now rest
+  only on the officially supported 70+ and manual SECC checks.
+- Removed the unsupported "Indian citizens" claim from the English, Malayalam
+  and Hindi descriptions (§9).
 - Broadened the manual SECC route guidance to cover ASHA / AWW / AWH-based
   identification as described in the official material.
 - Refreshed the state-coverage wording.
@@ -275,6 +283,10 @@ amount, fact or rule was invented.
   guidelines but are cited through PIB releases because those are the citable
   official pages that load reliably. The portal was not added back and TLS was
   not relaxed.
+- **PM-JAY citizenship:** no explicit official Indian-citizenship eligibility
+  provision could be established (§9), so citizenship is not encoded in either
+  PM-JAY route. A case whose eligibility cannot be established still receives
+  `insufficient_information` or `manual_review`, never a silent pass.
 - **Manual conditions:** nine rules depend on government lists, notified areas,
   SECC entries or inspections that an answer cannot establish. They yield
   `manual_review`, never a pass.
@@ -317,5 +329,153 @@ Regression tests were added for every corrected boundary and missing condition:
 strict pension `< ₹10,000`; lifetime vs. last-year tax status; PM SVANidhi age
 18, unique UPI ID and NPA/write-off denial; PMAY-U 2.0 ₹9 lakh ceiling and four
 manual checks; Snehapoorvam `< ₹20,000` / `< ₹22,375` and degree students;
-Samaswasam 5-year window; PM-JAY citizenship; and all corrected sources, dates
-and wording.
+Samaswasam 5-year window; PM-JAY age-70 boundary; and all corrected sources,
+dates and wording. The citizenship regression tests were replaced by §9.
+
+---
+
+## 9. Follow-up verification: PM-JAY citizenship exclusion
+
+**Date:** 18 November 2026
+**Scope:** `pm-jay` only — no other scheme record was changed
+**Outcome:** no explicit official citizenship provision found; exclusion removed
+
+### 9.1 Question and decision
+
+The Day 2.1 audit added `indian_citizen` to both PM-JAY routes without an
+explicit official source for that exclusion. The follow-up re-checked the two
+official PIB releases already cited by the record, the National Health
+Authority's guideline compendia and beneficiary-identification material, the
+Kerala State Health Agency operation manual, and the NHA website bundle.
+
+**No explicit official provision requiring Indian citizenship for PM-JAY
+eligibility was established.** The user-specified fallback was therefore
+applied:
+
+- `indian_citizen` was removed from both PM-JAY `any_of` routes. Route 0 is now
+  `age_70_or_above`; route 1 is now `manual_pmjay_secc`.
+- The unsupported "Indian citizens" claim was removed from the English,
+  Malayalam and Hindi descriptions.
+- The shared `indian_citizen` condition, profile field and all other schemes
+  were left untouched.
+
+### 9.2 Official material examined
+
+**1. PIB release 2053883**
+
+- URL: <https://pib.gov.in/PressReleasePage.aspx?PRID=2053883>
+- Document/title: "Cabinet approves health coverage to all senior citizens of
+  the age 70 years and above irrespective of income under Ayushman Bharat
+  Pradhan Mantri Jan Arogya Yojana (AB PM-JAY)"; subtitle "4.5 crore families
+  to be benefitted".
+- Authority: Ministry of Health and Family Welfare, Press Information Bureau,
+  Government of India; posted 11 Sep 2024, 8:08 PM by PIB Delhi.
+- Section: body paragraphs of the release (the press release has no numbered
+  sections).
+- Exact relevant wording:
+
+  > "The Union Cabinet, chaired by the Prime Minister Shri Narendra Modi, has
+  > approved the health coverage to all the senior citizens aged 70 years and
+  > above irrespective of income under the flagship scheme Ayushman Bharat
+  > Pradhan Mantri Jan Arogya Yojana (AB PM-JAY)."
+
+  > "With this approval, all senior citizens of the age 70 years and above
+  > irrespective of their socio- economic status would be eligible to avail
+  > the benefits of AB PM-JAY."
+
+  > "AB PM-JAY would now provide free healthcare coverage of Rs 5 lakh to all
+  > citizens of the age-group of 70 years and above across the country."
+
+- Finding: this defines the 70+ route by **age and socio-economic status
+  only**. The release contains **zero** occurrences of "Indian", "citizenship"
+  or "nationality". "All citizens ... across the country" is geographic
+  coverage language, not a citizenship test.
+
+**2. PIB release 2290627**
+
+- URL: <https://pib.gov.in/PressReleasePage.aspx?PRID=2290627>
+- Document/title: "Update on Ayushman Bharat Pradhan Mantri Jan Arogya Yojna
+  (AB PM-JAY)"; headline "AB PM-JAY Achieves Pan-India Implementation; Now
+  Operational Across All 36 States/UTs".
+- Authority: Ministry of Health and Family Welfare, Press Information Bureau,
+  Government of India; posted 28 Jul 2026, 6:14 PM by PIB Delhi.
+- Section: body paragraphs of the release.
+- Exact relevant wording:
+
+  > "The scheme was further expanded to cover 6 crore senior citizens of age 70
+  > years and above belonging to 4.5 crore families irrespective of their
+  > socio-economic status."
+
+- Finding: **zero** occurrences of "Indian" or "nationality". References to
+  "empanelled hospitals to identify and verify eligible beneficiaries,
+  irrespective of their home State" concern inter-State portability and
+  beneficiary verification, not citizenship.
+
+**3. NHA guideline compendia**
+
+- <https://nha.gov.in/strapi/uploads/Compendium_of_Guidelines_Vol_2_85e01c1234.pdf>
+  (Compendium of Guidelines, Vol. 2; 120 pages). "citizen" appears only in
+  generic senses: "all citizens aged 70 years and above" (p. 17, describing the
+  Vay Vandana expansion), "senior citizens" (p. 71), "citizen-centric" (p. 72)
+  and "eligible citizen" (p. 79, logo description). None of these conditions
+  eligibility on Indian citizenship.
+- <https://nha.gov.in/strapi/uploads/Compendium_of_Guidelines_Vol_4_8d0c36a4c7.pdf>
+  (Compendium of Guidelines, Vol. 4; 136 pages). No explicit citizenship
+  eligibility condition found.
+
+**4. Identification and portal material**
+
+- <https://hem.nha.gov.in/BeneficiaryIdentification.pdf> (Beneficiary
+  Identification; 16 pages). No occurrence of "citizen" or "nationality".
+  Aadhaar and other documents are described as identification mechanisms.
+- <https://www.sha.kerala.gov.in/wp-content/uploads/2025/12/Operation-Manual-for-AB-PM-JAY-April-2022.pdf>
+  (Operation Manual for AB PM-JAY, April 2022; 32 pages). No explicit
+  citizenship eligibility condition found.
+- <https://nha.gov.in/main.js> (NHA site bundle). Zero occurrences of "Indian
+  citizen" or "citizen of India"; only generic wording such as "Verifying
+  eligibility under other schemes of Government of India."
+
+Aadhaar, e-KYC, ration-card/family-identification documents and "verify
+eligible beneficiaries" language establish identity, authentication or
+portability. None of them defines citizenship, and none was treated as proof of
+it. No blog, news article or third-party site was used as evidence.
+
+### 9.3 Application to both routes
+
+- **`age_70_or_above`:** PIB 2053883 and 2290627 define this route by age 70+
+  and socio-economic status, with no citizenship test. The route now contains
+  only `age_70_or_above`.
+- **`manual_pmjay_secc`:** PIB 2290627 describes SECC-based and frontline-worker
+  family identification. This is a government-list check; where a profile
+  cannot establish it, the engine keeps the existing `unknown` /
+  `manual_verification_required` behaviour. Beneficiary-identification
+  documents verify identity, not nationality, so no citizenship condition can
+  be derived for this route either.
+
+### 9.4 Safety properties preserved
+
+- The three-valued evaluator was not changed. Unknown is still never a pass.
+- `age=72` returns `potentially_eligible` whether `indian_citizen` is supplied
+  as `true`, `false` or omitted; the field no longer appears among PM-JAY's
+  encoded conditions, so it can no longer make the scheme `ineligible`.
+- With no age supplied, PM-JAY returns `manual_review` (the manual SECC route is
+  unverifiable), not `potentially_eligible` and not `ineligible`.
+- An empty profile still produces no `potentially_eligible` result for any of
+  the 15 schemes.
+
+### 9.5 Follow-up verification
+
+Rerun after the change, from `backend/`:
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Backend tests | `.venv\Scripts\python.exe -m pytest -o addopts= -q --disable-warnings` | **152 passed** |
+| Ruff lint | `.venv\Scripts\python.exe -m ruff check .` | All checks passed |
+| Ruff format | `.venv\Scripts\python.exe -m ruff format --check .` | 28 files already formatted |
+
+No frontend, translation or source-policy files were changed, so the Day 2.1
+frontend lint/build results remain valid. New regression tests assert that both
+PM-JAY routes exclude `indian_citizen`, that a citizenship answer cannot change
+the outcome or appear as an encoded condition, that an unknown age yields
+`manual_review`, and that all three descriptions are free of the unsupported
+citizenship claim.

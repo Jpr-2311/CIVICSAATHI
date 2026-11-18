@@ -68,7 +68,7 @@ def test_empty_profile_returns_an_honest_result_for_every_scheme(
 
 
 def test_pm_jay_age_70_route_is_potentially_eligible(client: TestClient) -> None:
-    body = check(client, age=72, indian_citizen=True)
+    body = check(client, age=72)
     result = result_for(body, "pm-jay")
 
     assert result["outcome"] == "potentially_eligible"
@@ -76,33 +76,55 @@ def test_pm_jay_age_70_route_is_potentially_eligible(client: TestClient) -> None
     assert result["outcome_message"].startswith("You meet every encoded condition")
     assert result["disclaimer"]
     assert condition_statuses(result)["age_70_or_above"] == "pass"
-    assert condition_statuses(result)["indian_citizen"] == "pass"
 
 
 def test_pm_jay_age_70_boundary_is_inclusive(client: TestClient) -> None:
-    assert result_for(check(client, age=70, indian_citizen=True), "pm-jay")[
-        "outcome"
-    ] == ("potentially_eligible")
-    assert result_for(check(client, age=69, indian_citizen=True), "pm-jay")[
-        "outcome"
-    ] == ("manual_review")
-
-
-def test_pm_jay_requires_indian_citizenship(client: TestClient) -> None:
-    non_citizen = result_for(check(client, age=72, indian_citizen=False), "pm-jay")
-    assert non_citizen["outcome"] == "ineligible"
-    assert condition_statuses(non_citizen)["indian_citizen"] == "fail"
-
-    non_citizen_below_70 = result_for(
-        check(client, age=69, indian_citizen=False), "pm-jay"
+    assert result_for(check(client, age=70), "pm-jay")["outcome"] == (
+        "potentially_eligible"
     )
-    assert non_citizen_below_70["outcome"] == "ineligible"
+    assert result_for(check(client, age=69), "pm-jay")["outcome"] == "manual_review"
+
+
+def test_pm_jay_does_not_encode_a_citizenship_exclusion(
+    client: TestClient,
+) -> None:
+    """No official source establishes an Indian-citizenship condition here.
+
+    A citizenship answer, whatever its value, must not change the outcome or
+    appear as an encoded condition for PM-JAY. The unsupported exclusion was
+    removed from both routes in the post-audit verification.
+    """
+    results = [
+        result_for(check(client, age=72), "pm-jay"),
+        result_for(check(client, age=72, indian_citizen=True), "pm-jay"),
+        result_for(check(client, age=72, indian_citizen=False), "pm-jay"),
+    ]
+
+    for result in results:
+        assert result["outcome"] == "potentially_eligible"
+        assert "indian_citizen" not in condition_statuses(result)
+        assert set(condition_statuses(result)) == {
+            "age_70_or_above",
+            "manual_pmjay_secc",
+        }
+
+
+def test_pm_jay_unknown_age_uses_manual_review_not_a_silent_pass(
+    client: TestClient,
+) -> None:
+    result = result_for(check(client, indian_citizen=False), "pm-jay")
+    statuses = condition_statuses(result)
+
+    assert result["outcome"] == "manual_review"
+    assert statuses["age_70_or_above"] == "unknown"
+    assert statuses["manual_pmjay_secc"] == "unknown"
+    assert "indian_citizen" not in statuses
 
 
 def test_pm_jay_below_70_needs_the_manual_secc_route(
     client: TestClient,
 ) -> None:
-    result = result_for(check(client, age=69, indian_citizen=True), "pm-jay")
+    result = result_for(check(client, age=69), "pm-jay")
 
     assert result["outcome"] == "manual_review"
     secc = next(
@@ -579,7 +601,7 @@ def test_pmay_urban_2_income_band_and_manual_conditions(client: TestClient) -> N
 
 
 def test_results_are_ranked_by_outcome_then_name(client: TestClient) -> None:
-    body = check(client, age=72, indian_citizen=True)
+    body = check(client, age=72)
     ranks = [OUTCOME_RANK[result["outcome"]] for result in body["results"]]
 
     assert ranks == sorted(ranks)
@@ -655,7 +677,7 @@ def test_evaluation_does_not_modify_the_dataset(client: TestClient) -> None:
 
 
 def test_results_are_localised(client: TestClient) -> None:
-    body = check(client, age=72, indian_citizen=True, language="ml")
+    body = check(client, age=72, language="ml")
     result = result_for(body, "pm-jay")
 
     assert body["language"] == "ml"
