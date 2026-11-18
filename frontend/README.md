@@ -2,11 +2,11 @@
 
 React + Vite workspace for the CIVICSAATHI AI civic intelligence assistant.
 
-The Day 2 frontend includes a trilingual public landing page, a live telemetry
-dashboard, a searchable verified-scheme catalogue, scheme detail pages and a
-deterministic eligibility form. Document intelligence and the assistant remain
-honest previews. English, Malayalam and Hindi share one interface and one route
-structure.
+The Day 4 frontend includes a trilingual public landing page, a live telemetry
+dashboard, a searchable verified-scheme catalogue, scheme detail pages, a
+deterministic eligibility form, live document intelligence and an evidence-backed
+assistant with validated backend citations. English, Malayalam and Hindi share
+one interface and one route structure.
 
 ## Stack
 
@@ -17,6 +17,7 @@ structure.
 - Lucide icons
 - Custom lightweight i18n (no runtime dependency)
 - Oxlint for static checks
+- Vitest + Testing Library for assistant and translation-parity tests
 
 ## Setup
 
@@ -48,6 +49,7 @@ the browser bundle.
 | `npm run build` | Create a production build in `dist/` |
 | `npm run preview` | Preview the production build on port 4173 |
 | `npm run lint` | Run Oxlint |
+| `npm test` | Run Vitest (assistant UI and EN/ML/HI key parity) |
 
 ## Routes
 
@@ -58,8 +60,8 @@ the browser bundle.
 | `/app/schemes` | Searchable scheme catalogue | Live |
 | `/app/schemes/:schemeId` | Scheme detail | Live |
 | `/app/eligibility` | Eligibility checker | Live |
-| `/app/documents` | Document intelligence preview | Day 3 |
-| `/app/assistant` | AI assistant preview | Day 4 |
+| `/app/documents` | Document intelligence | Live |
+| `/app/assistant` | Grounded assistant | Live |
 | `*` | Not found | Live |
 
 Unknown `/app/*` routes render the 404 page with a route back to the dashboard.
@@ -76,8 +78,11 @@ schema; add a key to all three catalogs and read it with
 `useLanguage().t('flat.key')` or `useMessages()` for structured copy. Indic
 scripts use their own display fonts, never synthetic italics.
 
-Scheme and eligibility requests send the current language, so switching
-languages refetches localised content. A live eligibility result is re-run
+Scheme, eligibility and assistant requests send the current language. The
+assistant answer language follows the selector on its page, which updates the
+global app language; switching languages hides an answer generated in the old
+language. Catalog parity is enforced by a committed Vitest test. A live
+eligibility result is re-run
 automatically when the language changes.
 
 ## Structure

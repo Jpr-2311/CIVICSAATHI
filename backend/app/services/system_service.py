@@ -69,7 +69,7 @@ FEATURES: list[FeatureInfo] = [
     FeatureInfo(
         id="assistant",
         name="Multilingual assistant",
-        status="planned",
+        status="live",
         milestone="Day 4",
         description=(
             "Gemini-powered answers grounded in retrieved evidence, in "
@@ -79,7 +79,7 @@ FEATURES: list[FeatureInfo] = [
     FeatureInfo(
         id="evidence",
         name="Evidence & citations",
-        status="planned",
+        status="live",
         milestone="Day 4",
         description=(
             "Every answer carries its document name, page number and "
@@ -139,6 +139,29 @@ def _credential_check(
     )
 
 
+def _gemini_check(settings: Settings) -> ReadinessCheck:
+    """Report credential presence only; never probe the external API here."""
+    if not settings.gemini_configured:
+        return ReadinessCheck(
+            id="gemini",
+            label="Google Gemini",
+            status="not_configured",
+            detail=(
+                "GEMINI_API_KEY is not set. Grounded answers are unavailable; "
+                "document search still works."
+            ),
+        )
+    return ReadinessCheck(
+        id="gemini",
+        label="Google Gemini",
+        status="ok",
+        detail=(
+            f"Credential configured for model {settings.gemini_model}. "
+            "Answers are grounded in uploaded documents."
+        ),
+    )
+
+
 def _vector_store_check(
     document_store: DocumentStore | None,
 ) -> ReadinessCheck:
@@ -183,13 +206,7 @@ def build_readiness(
             ),
             missing_detail=("Not configured. The validated JSON repository is active."),
         ),
-        _credential_check(
-            check_id="gemini",
-            label="Google Gemini",
-            configured=settings.gemini_configured,
-            pending_detail="Credentials detected — RAG pipeline scheduled for Day 4.",
-            missing_detail="GEMINI_API_KEY is not set. AI features are disabled.",
-        ),
+        _gemini_check(settings),
         _vector_store_check(document_store),
     ]
 

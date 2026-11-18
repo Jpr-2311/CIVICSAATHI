@@ -2,12 +2,11 @@
 
 FastAPI service for the CIVICSAATHI AI civic intelligence workspace.
 
-Day 3 adds **document intelligence**: secure PDF upload, page-aware text
-extraction, overlapping chunks, multilingual embeddings and persistent ChromaDB
-retrieval that returns real passages with page citations. The live scheme
-catalogue and deterministic eligibility engine from Day 2 remain unchanged.
-Gemini-generated answers, Supabase, voice and agents are **not** part of this
-milestone.
+Day 4 adds the **evidence-grounded assistant**: official `google-genai` SDK
+integration, bounded retrieval from the Day 3 document pipeline, strict JSON
+validation and backend-populated page citations. The live scheme catalogue,
+deterministic eligibility engine and document APIs remain unchanged. Supabase,
+voice, agents and persistent chat history are still out of scope.
 
 ## Requirements
 
@@ -39,10 +38,13 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 ```
 
-`.env` is local-only and gitignored. All defaults work without editing it;
-Supabase and Gemini remain unconfigured by design, and document indexing uses
-local files. The first document upload/search loads
-`intfloat/multilingual-e5-small` and downloads it into the Hugging Face cache
+`.env` is local-only and gitignored. All defaults work for local document
+search: Supabase remains unconfigured, Gemini is disabled when
+`GEMINI_API_KEY` is empty, and document indexing uses local files. To enable
+assistant answers, add a real key to `backend/.env` (never commit it) and keep
+`GEMINI_MODEL` at the default unless you intend to change models. The first
+document upload/search loads `intfloat/multilingual-e5-small` and downloads it
+into the Hugging Face cache
 unless it is already present. To pre-warm the cache, run once:
 
 ```powershell
@@ -54,7 +56,14 @@ To run the gated real-model integration test afterwards:
 ```powershell
 $env:CIVICSAATHI_RUN_MODEL_TESTS = '1'
 .\.venv\Scripts\python.exe -m pytest tests/integration -q
+
+# Opt-in LIVE Gemini test: requires a real key and spends an API call.
+$env:CIVICSAATHI_RUN_GEMINI_TESTS = '1'
+.\.venv\Scripts\python.exe -m pytest tests/integration/test_gemini_integration.py -q
 ```
+
+The normal test suite uses `FakeGemini` and never contacts Google. The live test
+is separate and is not needed to validate the Day 4 implementation.
 
 ## Run
 
@@ -70,6 +79,7 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 - Schemes: <http://127.0.0.1:8000/api/v1/schemes>
 - Eligibility: `POST /api/v1/eligibility/check`
 - Documents: <http://127.0.0.1:8000/api/v1/documents>
+- Assistant: `POST /api/v1/assistant/ask`
 
 Run from the `backend/` directory so the `app` package resolves. Uploads are
 read into memory with a hard byte cap; PDF parsing, embedding and vector I/O run
@@ -91,12 +101,14 @@ in a threadpool so the event loop stays responsive.
 | `GET` | `/api/v1/documents/{document_id}` | Full document metadata (no server paths) |
 | `POST` | `/api/v1/documents/search` | Retrieve page-cited passages |
 | `DELETE` | `/api/v1/documents/{document_id}` | Delete one document, its file and its vectors |
+| `POST` | `/api/v1/assistant/ask` | Grounded answer with validated citations; no history |
 
-Readiness now reports `vector_store: ok` with the indexed passage count. The
-overall status is still `degraded` because Supabase and Gemini are unconfigured
-or pending; that is an honest signal, not a failure. `pending` means "planned and
-not built", `not_configured` means "no credentials", `error` means "expected to
-work but failed".
+Readiness reports `vector_store: ok` with the indexed passage count and
+`gemini: ok` only when `GEMINI_API_KEY` is present. The overall status remains
+`degraded` while Supabase is intentionally unconfigured; that is an honest
+signal, not a failure. `pending` means "configured but deliberately deferred",
+`not_configured` means "no credentials", `error` means "expected to work but
+failed". Credential presence is not a live provider health check.
 
 ### `GET /api/v1/schemes`
 
@@ -193,8 +205,14 @@ Settings are defined in `app/core/config.py` and loaded from `backend/.env`.
 | `ENVIRONMENT` | `development` | `development`, `staging` or `production` |
 | `LOG_LEVEL` | `INFO` | Python logging level |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated browser origins |
-| `GEMINI_API_KEY` | empty | Server-side Gemini key (Day 4) |
+| `GEMINI_API_KEY` | empty | Server-side Gemini key; empty disables assistant answers |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model identifier |
+| `ASSISTANT_TOP_K` | `5` | Passages retrieved before the evidence gate |
+| `ASSISTANT_MIN_SIMILARITY` | `0.30` | Heuristic minimum similarity on top of the Day 3 distance gate |
+| `ASSISTANT_MAX_EVIDENCE_CHUNKS` | `5` | Maximum passages included in the prompt |
+| `ASSISTANT_MAX_CONTEXT_CHARS` | `12000` | Total excerpt character budget |
+| `ASSISTANT_REQUEST_TIMEOUT_SECONDS` | `30` | Gemini SDK request timeout |
+| `ASSISTANT_MAX_OUTPUT_TOKENS` | `900` | Generation cap |
 | `SUPABASE_URL` | empty | Supabase project URL (deferred) |
 | `SUPABASE_SERVICE_ROLE_KEY` | empty | Server-only service role key |
 | `CHROMA_PERSIST_DIR` | `backend/.chroma` | Persistent ChromaDB directory |
@@ -213,18 +231,22 @@ Settings are defined in `app/core/config.py` and loaded from `backend/.env`.
 
 Secrets are `SecretStr` values and are never returned by any endpoint. Storage
 paths are server-side only. `passage: ` and `query: ` prefixes and normalized
-vectors follow the multilingual-e5 contract.
+vectors follow the multilingual-e5 contract. The assistant defaults are bounded;
+`ASSISTANT_MIN_SIMILARITY` is a configurable heuristic, not a calibrated measure
+of factual truth. Full Day 4 configuration and validation details are in
+[`docs/DAY_4_GEMINI.md`](../docs/DAY_4_GEMINI.md).
 
 ## Tests and lint
 
 ```powershell
 python -m pytest
 python -m ruff check app tests
+python -m ruff format --check app tests
 ```
 
-**190 unit/API tests pass and 1 real-model integration test is skipped by
-default.** The gated test is opt-in so no routine test depends on a model
-download:
+**229 unit/API tests pass and 2 integration tests are skipped by default.**
+The gated tests are opt-in so no routine test depends on a model download or a
+paid Gemini call:
 
 ```powershell
 $env:CIVICSAATHI_RUN_MODEL_TESTS = '1'
@@ -247,12 +269,21 @@ The suite covers:
   rejected document ids;
 - service ingestion, duplicate handling, three-language retrieval, bounded
   `top_k`, no-evidence results and scoped deletion;
-- all six document HTTP endpoints and their error envelopes.
+- all six document HTTP endpoints and their error envelopes;
+- the assistant RAG pipeline with a fake provider: success, EN/ML/HI, no
+  evidence, insufficient model output, malformed JSON, wrong language, invalid
+  and fabricated citation ids, bounded retry, document filter, provider errors
+  and prompt-injection resistance;
+- the assistant HTTP contract, validation, safe error codes and no history;
+- the lazy Gemini wrapper's schema, error mapping, timeout handling and bounded
+  generation configuration (without a network call).
 
-Unit tests use a deterministic injectable `FakeEmbedder` and tiny in-memory
-PDFs, so they need neither the neural model nor a network. The gated integration
-test uses the real `intfloat/multilingual-e5-small` model to confirm that English,
-Malayalam and Hindi queries retrieve the correct English page passage.
+Unit tests use deterministic injectable `FakeEmbedder` and `FakeGemini` peers
+with tiny in-memory PDFs, so they need neither the neural model nor a network.
+The gated document integration test uses the real
+`intfloat/multilingual-e5-small` model to confirm cross-language retrieval. The
+separate gated Gemini test uses a real configured key to check a grounded answer
+with a valid citation; it never runs by default.
 
 ## Structure
 
@@ -270,13 +301,15 @@ backend/
 │   ├── models/
 │   │   ├── schemes.py             # Dataset, API and eligibility contracts
 │   │   ├── schemas.py             # Health, readiness and system contracts
-│   │   └── documents.py           # Document upload/list/search/delete contracts
+│   │   ├── documents.py           # Document upload/list/search/delete contracts
+│   │   └── assistant.py           # Assistant request/response/citation contracts
 │   ├── routes/
 │   │   ├── health.py              # Liveness + readiness
 │   │   ├── system.py              # Product metadata
 │   │   ├── schemes.py             # Catalogue list/detail
 │   │   ├── eligibility.py         # Deterministic eligibility check
-│   │   └── documents.py           # Upload, list, detail, search, delete
+│   │   ├── documents.py           # Upload, list, detail, search, delete
+│   │   └── assistant.py           # POST /assistant/ask
 │   └── services/
 │       ├── system_service.py      # Feature registry and health logic
 │       ├── scheme_service.py      # Localised list/detail responses
@@ -285,9 +318,13 @@ backend/
 │       ├── pdf_extractor.py       # Secure validation + PyMuPDF text extraction
 │       ├── chunker.py             # Page-aware overlapping chunker
 │       ├── embeddings.py          # Lazy multilingual-e5 embedder
-│       └── document_service.py    # Ingestion, retrieval and deletion orchestration
+│       ├── document_service.py    # Ingestion, retrieval and deletion orchestration
+│       ├── gemini_client.py       # Lazy official SDK wrapper, error mapping
+│       ├── assistant_errors.py    # Safe assistant error types and codes
+│       └── assistant_service.py   # Evidence gate, grounding and citation validation
 ├── tests/
 │   ├── document_helpers.py        # Tiny PDFs and deterministic FakeEmbedder
+│   ├── assistant_helpers.py       # FakeGemini and isolated assistant services
 │   ├── test_api.py
 │   ├── test_scheme_dataset.py
 │   ├── test_source_policy.py
@@ -299,8 +336,12 @@ backend/
 │   ├── test_document_store.py
 │   ├── test_document_service.py
 │   ├── test_documents_api.py
+│   ├── test_gemini_client.py
+│   ├── test_assistant_service.py
+│   ├── test_assistant_api.py
 │   └── integration/
-│       └── test_documents_integration.py  # Gated real-model test
+│       ├── test_documents_integration.py  # Gated real-model test
+│       └── test_gemini_integration.py     # Gated LIVE Gemini test
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── pytest.ini
@@ -334,6 +375,12 @@ backend/
 - **Honest retrieval.** Results are actual passages, never generated text. No
   match yields an explicit no-evidence response, and every response notes that
   similarity is not proof of correctness.
+- **Untrusted evidence.** Retrieved text is delimited as source material; the
+  system instruction forbids following injected instructions, revealing secrets,
+  inventing facts and making eligibility decisions.
+- **Backend-owned citations.** The model returns only evidence ids. Metadata is
+  rebuilt from retrieved passages, invalid ids are discarded, and one corrective
+  retry is allowed before an insufficient-evidence response.
 - **Liveness must stay cheap.** `/health` never depends on ChromaDB, Supabase or
   Gemini. Readiness is the place for dependency state.
 - **No profile persistence.** Eligibility requests are evaluated in memory and
@@ -346,8 +393,9 @@ backend/
 
 - **No OCR.** Image-only/scanned PDFs are flagged `needs_ocr` and are not
   searchable until OCR is added in a later milestone.
-- **No generated answers.** This release returns source passages only; the
-  Gemini RAG assistant is Day 4.
+- **No guaranteed grounded answer.** If the documents lack relevant evidence,
+  Gemini fails, or the response cannot be verified, the API says so instead of
+  guessing. Generated text must be checked against the cited page.
 - **Text-layer quality varies.** Extraction quality follows the PDF's embedded
   text layer; badly encoded official PDFs may yield poor passages.
 - **Cosine distance, not factuality.** Retrieval ranks by embedding similarity;
@@ -355,9 +403,10 @@ backend/
 - **Single-node persistence.** ChromaDB uses a local disk directory; deployment
   needs a mounted volume or a managed replacement.
 
-## Next milestone
+## Day 4 reference
 
-Day 4 adds the evidence-backed assistant: Gemini answers grounded only in
-retrieved passages, with file and page citations in all three languages.
-Eligibility and scheme lookup stay outside that pipeline, and the document
-retrieval contract above remains the grounding source.
+See [`docs/DAY_4_GEMINI.md`](../docs/DAY_4_GEMINI.md) for the full request and
+response contract, RAG pipeline, evidence/citation validation, localized
+insufficient-evidence behavior, safety controls and local setup. Eligibility and
+scheme lookup remain outside that pipeline; the document retrieval contract
+above is the grounding source.

@@ -4,8 +4,8 @@ import { FileText, ListChecks, MessagesSquare, Search } from 'lucide-react'
  * Structural metadata for the four workspace modules. All user-facing copy
  * lives in the i18n catalog under `modules.<catalogKey>`.
  *
- * Scheme discovery and eligibility are live from Day 2. Document intelligence
- * is live from Day 3; the assistant remains an honest preview until Day 4.
+ * Scheme discovery and eligibility are live from Day 2, document intelligence
+ * from Day 3, and the evidence-grounded assistant from Day 4.
  */
 export const MODULES = [
   {
@@ -38,6 +38,6 @@ export const MODULES = [
     path: 'assistant',
     icon: MessagesSquare,
     day: 4,
-    status: 'preview',
+    status: 'live',
   },
 ]

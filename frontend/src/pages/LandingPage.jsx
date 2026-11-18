@@ -55,7 +55,7 @@ const SERVICES = [
     to: '/app/assistant',
     icon: MessagesSquare,
     iconClass: 'bg-cream-100 text-brand-800',
-    status: 'preview',
+    status: 'live',
   },
 ]
 

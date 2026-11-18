@@ -62,6 +62,15 @@ class Settings(BaseSettings):
     document_search_max_distance: float = 1.0
     embedding_model_name: str = "intfloat/multilingual-e5-small"
 
+    # Evidence-grounded assistant (Day 4). Retrieval defaults stay bounded;
+    # the similarity gate is a documented heuristic, not a calibrated score.
+    assistant_top_k: int = 5
+    assistant_min_similarity: float = 0.30
+    assistant_max_evidence_chunks: int = 5
+    assistant_max_context_chars: int = 12000
+    assistant_request_timeout_seconds: float = 30.0
+    assistant_max_output_tokens: int = 900
+
     @property
     def allowed_origins(self) -> list[str]:
         """Return normalized CORS origins."""

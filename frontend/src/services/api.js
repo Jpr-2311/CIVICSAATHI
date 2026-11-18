@@ -85,7 +85,7 @@ function toParams(params) {
 
 async function request(
   path,
-  { method = 'get', params, data, signal, onUploadProgress } = {},
+  { method = 'get', params, data, signal, onUploadProgress, timeout } = {},
 ) {
   try {
     const response = await api.request({
@@ -95,6 +95,7 @@ async function request(
       data,
       signal,
       onUploadProgress,
+      ...(timeout ? { timeout } : {}),
     })
     return response.data
   } catch (error) {
@@ -183,6 +184,22 @@ export function searchDocuments(payload, options = {}) {
     method: 'post',
     data: payload,
     signal: options.signal,
+  })
+}
+
+/**
+ * Ask a grounded question. Retrieval plus generation can take longer than a
+ * normal API call, so this route uses a longer client-side timeout.
+ *
+ * @param {{question: string, language: string, document_id?: string|null}} payload
+ * @param {{signal?: AbortSignal}} options
+ */
+export function askAssistant(payload, options = {}) {
+  return request(`${API_PREFIX}/assistant/ask`, {
+    method: 'post',
+    data: payload,
+    signal: options.signal,
+    timeout: 45000,
   })
 }
 

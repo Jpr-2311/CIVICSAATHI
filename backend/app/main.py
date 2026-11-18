@@ -21,8 +21,11 @@ from app.database.scheme_repository import (
     DatasetUnavailableError,
     SchemeRepository,
 )
-from app.routes import documents, eligibility, health, schemes, system
+from app.routes import assistant, documents, eligibility, health, schemes, system
+from app.services.assistant_errors import AssistantServiceError
+from app.services.assistant_service import AssistantService
 from app.services.document_service import DocumentService, DocumentServiceError
+from app.services.gemini_client import GeminiService
 from app.services.pdf_extractor import PDFValidationError
 
 settings = get_settings()
@@ -41,6 +44,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         collection_name=settings.document_collection_name,
     )
     app.state.document_service = DocumentService(app.state.document_store, settings)
+    app.state.gemini_service = GeminiService(
+        api_key=settings.gemini_api_key.get_secret_value(),
+        model=settings.gemini_model,
+        timeout=settings.assistant_request_timeout_seconds,
+        max_output_tokens=settings.assistant_max_output_tokens,
+    )
+    app.state.assistant_service = AssistantService(
+        document_service=app.state.document_service,
+        gemini=app.state.gemini_service,
+        settings=settings,
+    )
     logger.info(
         "Starting %s v%s [%s] on prefix %s",
         settings.app_name,
@@ -77,6 +91,7 @@ app.include_router(system.router, prefix=settings.api_prefix)
 app.include_router(schemes.router, prefix=settings.api_prefix)
 app.include_router(eligibility.router, prefix=settings.api_prefix)
 app.include_router(documents.router, prefix=settings.api_prefix)
+app.include_router(assistant.router, prefix=settings.api_prefix)
 
 
 @app.get("/", include_in_schema=False)
@@ -146,6 +161,17 @@ async def document_service_handler(
     """Return the documented error envelope for document operations."""
     if exc.status_code >= 500:
         logger.error("Document operation failed on %s: %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": str(exc), "code": exc.code},
+    )
+
+
+@app.exception_handler(AssistantServiceError)
+async def assistant_service_handler(
+    request: Request, exc: AssistantServiceError
+) -> JSONResponse:
+    """Return documented assistant errors without prompts, keys or stack traces."""
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": str(exc), "code": exc.code},

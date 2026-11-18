@@ -1,6 +1,6 @@
 # Architecture — CIVICSAATHI AI
 
-**Status:** Day 3 complete · **Version:** 0.2.0
+**Status:** Day 4 complete · **Version:** 0.2.0
 **Last updated:** 18 November 2026
 
 This document explains how the system is put together, which boundaries exist
@@ -46,19 +46,31 @@ reference for extending the project without weakening its guarantees.
 - Explicit no-evidence results and a standing notice that similarity is not
   proof of factual correctness.
 
+### Built by Day 4
+
+- Official `google-genai` SDK integration with a configurable model, lazy
+  client creation, request timeouts and bounded output.
+- A question → multilingual retrieval → evidence gate → grounded generation →
+  citation validation pipeline that never trusts model-supplied metadata.
+- `POST /api/v1/assistant/ask` with localized insufficient-evidence responses,
+  safe error codes and no persisted history.
+- A live trilingual assistant UI with an indexed-document filter, expandable
+  backend-populated citations, loading, insufficient, error and retry states.
+- Mocked Gemini tests, a gated opt-in live test, and Day 4 documentation.
+
 ### Deliberately not built yet
 
 - Supabase persistence. Deferred beyond Day 2; the JSON repository is the
   active provider and the seam for a future database implementation.
-- Gemini answers and citation rendering (Day 4).
+- User accounts and persistent chat history.
 - OCR for image-only PDFs; such files are flagged `needs_ocr` and are not
   searchable in this release.
 - Voice input and agent workflows.
 - Authentication and user accounts (not required for the hackathon MVP).
 
-The UI labels every unbuilt module with its milestone. Scheme discovery,
-eligibility and document intelligence are live; the assistant remains an honest
-preview.
+All four workspace modules are labelled live. Scheme discovery, eligibility,
+document intelligence and the evidence-grounded assistant share the same
+retrieval and trust rules; no module claims a capability it does not have.
 
 ---
 
@@ -68,10 +80,11 @@ preview.
    one. Eligibility is computed by code. The LLM may explain, never decide.
 2. **Deterministic core, probabilistic periphery.** Rules, retrieval and
    citation assembly are deterministic. Embedding similarity is a ranking
-   signal, not a decision; no language generation happens on Day 3.
+   signal, not a decision; Day 4 generation is constrained to retrieved
+   evidence and verified before it is returned.
 3. **Evidence before answers.** A document result is a real passage with a
-   filename and page number, or an explicit no-evidence result. Nothing is
-   paraphrased into a confident answer.
+   filename and page number, or an explicit no-evidence result. Assistant
+   answers are generated only after that evidence exists and carry it.
 4. **Honest states.** Empty data is `pending`. Missing credentials are
    `not_configured`. A failed check is `error`. A missing answer is `unknown`.
    Nothing is silently green and no field is guessed.
@@ -80,8 +93,8 @@ preview.
    leave the server.
 6. **Seam-first data access.** Routes never read JSON or ChromaDB directly. A
    repository/store boundary keeps the API contract stable if storage changes.
-7. **Progressive disclosure.** The workspace shows what is live, what is a
-   preview and what each preview will require.
+7. **Progressive disclosure.** The workspace labels every module honestly;
+   credential presence and live provider success are reported separately.
 
 ---
 
@@ -114,8 +127,9 @@ preview.
 
 The browser never talks to a database, Gemini or ChromaDB directly. Every
 privileged operation goes through the API, which keeps credentials, storage
-paths and policy enforcement on the server. Day 4 will add Gemini above the
-same retrieval layer; it is not wired in this release.
+paths and policy enforcement on the server. Day 4 adds Gemini above the same
+Day 3 retrieval layer; the model receives bounded passages and returns only
+evidence ids.
 
 ---
 
@@ -147,7 +161,7 @@ configurable and must be updated for deployment.
 | `/app/schemes/:schemeId` | `SchemeDetailPage` | Live verified scheme record |
 | `/app/eligibility` | `EligibilityPage` | Live optional form and rule-based results |
 | `/app/documents` | `DocumentsPage` | Live PDF library, upload and page-cited search |
-| `/app/assistant` | `AssistantPage` | Day 4 preview |
+| `/app/assistant` | `AssistantPage` | Live grounded Q&A with backend citations |
 | `*` | `NotFoundPage` | Route-level 404 |
 
 `AppShell` wraps all `/app/*` routes and owns the persistent sidebar, topbar,
@@ -221,8 +235,10 @@ filename, page number and similarity, plus a verification notice. Empty,
 loading, upload-error and no-evidence states are explicit. No fake documents or
 answers are seeded.
 
-The assistant is still a preview and is labelled as such in the sidebar,
-dashboard and landing page. Document intelligence is marked live.
+The assistant is live and labelled accordingly. It sends the selected question
+and language to the backend, renders only validated citations returned by the
+server, and shows an explicit insufficient-evidence or error state instead of a
+fabricated answer.
 
 ### 5.5 Snapshot flow
 
@@ -352,11 +368,11 @@ with `lru_cache`. It exposes normalized CORS origins, the dataset path and
 boolean helpers (`gemini_configured`, `supabase_configured`). Secrets use
 `SecretStr` and are never included in responses or logs.
 
-Day 3 settings are server-side only: `document_storage_dir`,
-`chroma_persist_dir`, `document_collection_name`, upload/size/page limits,
-chunk size/overlap/minimum, the OCR text-density hint, search defaults and
-bounds, and `embedding_model_name` (default
-`intfloat/multilingual-e5-small`). Storage paths are never returned by an API.
+Document and assistant settings are server-side only: storage/vector
+directories, upload/size/page limits, chunking, OCR and search bounds,
+`embedding_model_name` (default `intfloat/multilingual-e5-small`), the Gemini key
+and model, and bounded assistant retrieval/context/timeout/output settings.
+Storage paths and secrets are never returned by an API.
 The full list with defaults is in [`backend/README.md`](../backend/README.md).
 
 ### 6.5 Error contract
@@ -476,7 +492,7 @@ Each check has one of four states:
 | State | Meaning | Example |
 | --- | --- | --- |
 | `ok` | Verified and usable | API responding; 15 schemes loaded; ChromaDB collection open |
-| `pending` | Planned, not built yet | Assistant (Day 4) |
+| `pending` | Configured but deliberately deferred | Supabase with credentials present |
 | `not_configured` | Required credentials absent | Supabase URL/key or Gemini key empty |
 | `error` | Expected to work but failed | Dataset file missing or invalid; ChromaDB unopenable |
 
@@ -488,18 +504,18 @@ all checks == "ok"          → overall "ready"
 anything else               → overall "degraded"
 ```
 
-On Day 3 the expected result is still `degraded`:
+On Day 4 the expected result is still `degraded` because Supabase is
+intentionally unconfigured:
 
-- API is `ok`.
-- `scheme_dataset` is `ok` with 15 curated schemes.
-- `vector_store` is `ok` with the live passage count from the Chroma collection.
+- API, `scheme_dataset` and `vector_store` are `ok`.
+- Gemini is `ok` when `GEMINI_API_KEY` is present and `not_configured`
+  otherwise. This checks credential presence only, not provider health.
 - Supabase is `not_configured`, or `pending` with a note that integration is
   deferred if credentials happen to be present.
-- Gemini is `not_configured` or `pending` until Day 4.
-- The assistant feature is `pending` until Day 4.
+- The assistant and evidence features are `live` in the feature registry.
 
-This is intentionally visible in the dashboard. A green dashboard before the
-assistant milestone would be a lie.
+This is intentionally visible in the dashboard. Credential presence is never
+presented as proof that a live Gemini call succeeded.
 
 ### 7.6 Document endpoints in detail
 
@@ -527,11 +543,15 @@ explicit no-evidence message. Every response carries `similarity_notice`.
 vectors (Chroma `where` filter), its registry record and its stored PDF;
 unrelated documents are untouched.
 
-### 7.7 Not implemented
+### 7.7 Assistant endpoint in detail
 
-| Method | Path | Milestone |
-| --- | --- | --- |
-| `POST` | `/api/v1/assistant/query` | Day 4 |
+`POST /api/v1/assistant/ask` accepts `question` (1–1000 non-blank characters),
+`language` (`en`, `ml`, `hi`) and an optional server-generated `document_id`.
+Unknown fields are rejected, so a client cannot inject a system prompt. The
+response carries the generated `answer`, the effective `language`,
+`evidence_found`, `insufficient_evidence`, backend-populated `citations`, a
+localized `message`, a disclaimer and a similarity notice. Nothing is stored.
+See `docs/DAY_4_GEMINI.md` for the full pipeline and validation rules.
 
 ---
 
@@ -802,16 +822,22 @@ of factual correctness.
 Image-only PDFs are flagged `needs_ocr` and produce no passages. Extraction
 quality depends on the PDF's embedded text layer. Embedding similarity ranks by
 topic, not truth. ChromaDB is a single-node local store and needs a persistent
-volume or a managed replacement when deployed. No generated answers, OCR,
-Gemini, voice or agents exist in this milestone.
+volume or a managed replacement when deployed. Generated answers are bounded
+by retrieved context and are not a substitute for reading the cited page. OCR,
+voice, agents and persistent chat history are out of scope.
 
 ---
 
 ## 11. Security and privacy
 
-| Concern | Control through Day 3 | Planned control |
+| Concern | Control through Day 4 | Planned control |
 | --- | --- | --- |
 | API keys | Server-side `.env`, `SecretStr`, gitignored | Rotate keys before demo |
+| Gemini key | Backend only; never in `VITE_*` or the browser bundle | Rotate keys before demo |
+| Retrieved passages | Treated as untrusted data; embedded instructions ignored | Same |
+| Model output | JSON-schema constrained; only evidence ids trusted; metadata rebuilt server-side | Same |
+| Prompt / profile logging | No prompt, key or answer text logged | Same |
+| Question storage | In-memory only; no history endpoint | Policy before any history is added |
 | Browser bundle | Only `VITE_API_BASE_URL` | Never add secrets to `VITE_*` |
 | CORS | Explicit development origins | Production frontend origin only |
 | Dataset sources | HTTPS + reviewed allowlist + rationale | Review on every new domain |
@@ -848,7 +874,10 @@ public bucket, and are never used to train a model.
 | Ingestion failure mid-write | Exception in service | Vectors and file rolled back; no orphaned record |
 | Document search with no match | Distance filter | Explicit no-evidence response, empty result list |
 | Chroma unavailable | Store status | Readiness `error`; document operations return a safe 500 |
-| Missing Gemini key | Settings check | Readiness `not_configured`, AI features disabled |
+| Missing Gemini key | Settings check | 503 `assistant_not_configured`; document search still works |
+| Gemini timeout / rate limit | SDK error mapping | 504 / 429 with safe retry copy |
+| Malformed or unverifiable model output | Schema + citation-id validation | One bounded retry, then insufficient response |
+| Fabricated citation id | Compared with retrieved evidence ids | Discarded; never rendered |
 | Missing Supabase key | Settings check | `not_configured`, JSON provider remains active |
 | Unhandled exception | Global handler | Logged with traceback, generic 500 to client |
 | Stale poll response | Request ID | Discarded |
@@ -876,18 +905,27 @@ tiny in-memory PDFs, so they need no model download or network.
 | `tests/test_document_service.py` | Ingestion, duplicate handling, EN/ML/HI retrieval, no-evidence, scoped delete |
 | `tests/test_documents_api.py` | All six document endpoints, validation errors and response contracts |
 | `tests/integration/test_documents_integration.py` | Gated real-model cross-language retrieval |
+| `tests/assistant_helpers.py` | `FakeGemini` and isolated assistant/DocumentService fixtures |
+| `tests/test_gemini_client.py` | Lazy wrapper, schema, bounds and safe error mapping |
+| `tests/test_assistant_service.py` | RAG pipeline, evidence gate, citation validation, retry, injection |
+| `tests/test_assistant_api.py` | Ask endpoint, validation, filters, error codes and no history |
+| `tests/integration/test_gemini_integration.py` | Gated LIVE Gemini grounded-answer check |
 
-Result: **190 passed, 1 skipped** in the default run (the gated real-model test).
-With `CIVICSAATHI_RUN_MODEL_TESTS=1`, the integration test also passes using
-`intfloat/multilingual-e5-small` from the local Hugging Face cache.
+Result: **229 passed, 2 skipped** in the default run (both gated integration
+tests). With `CIVICSAATHI_RUN_MODEL_TESTS=1`, the document test uses
+`intfloat/multilingual-e5-small` from the local Hugging Face cache. With
+`CIVICSAATHI_RUN_GEMINI_TESTS=1` and a real key, the separate Gemini test checks
+a live grounded answer; neither gated test is needed for the default suite.
 
 Also enforced:
 
 - Ruff lint and format check for all backend code.
 - Oxlint for the frontend.
+- Vitest component and contract tests for the assistant UI, plus 9 frontend
+  tests in the default run.
 - Vite production build, which catches import and bundling errors.
-- Catalog key parity: EN, ML and HI contain identical flattened key sets
-  (verified by a script; the count changes as copy is added).
+- Catalogue key parity: EN, ML and HI contain identical flattened key sets,
+  enforced by a committed Vitest test (598 keys in Day 4).
 - Manual browser verification at 1440 px and 390 px for the Day 2 shell,
   including empty search, invalid id, offline API and language switching. The
   Day 3 document UI is covered by API tests and a production build but has not
@@ -905,7 +943,7 @@ GitHub
                      ├── schemes.json (validated repository)
                      ├── documents/ + .chroma (mounted persistent disk)
                      ├── Supabase PostgreSQL (deferred)
-                     └── Google Gemini API (Day 4)
+                     └── Google Gemini API (server-side credential)
 ```
 
 Configuration requirements:
@@ -938,7 +976,7 @@ Configuration requirements:
 | `potentially_eligible`, never `eligible` | Avoids overstating a preliminary result | Slightly more cautious wording |
 | English verified, ML/HI editorial | No false claim of official translation | Translation quality must be reviewed separately |
 | Health and readiness split | Liveness must not depend on third parties | Two endpoints to maintain |
-| Evidence-first RAG (planned for Day 4) | Citations are the product differentiator | No generated answers in Day 3 |
+| Evidence-first RAG | Citations are the product differentiator | Similarity ranking is not proof of truth |
 | Multilingual-e5-small | EN/ML/HI retrieval without an LLM call; runs locally after download | Model download and CPU time on first use |
 | `passage:` / `query:` prefixes + normalization | Follows the model's published contract | Text must be prefixed consistently |
 | Page-scoped chunks | A citation must never point at the wrong page | No cross-page context in a single passage |
@@ -950,19 +988,15 @@ Configuration requirements:
 
 ---
 
-## 16. Day 4 extension points
+## 16. Day 5+ extension points
 
-Start here when Day 3 is approved:
+Day 4 is complete. Start future work here:
 
-1. Inject the existing retrieval results into a Gemini prompt; do not let the
-   model invent facts outside the retrieved passages.
-2. Render file and page citations beside every generated sentence, and keep the
-   explicit no-evidence response when retrieval returns nothing.
-3. Localize the assistant flow in English, Malayalam and Hindi using the same
-   key-parity discipline as the rest of the UI.
-4. Add retrieval/generation evaluation sets with expected pages before changing
-   chunking or model settings.
-5. Keep eligibility and scheme lookup out of the document pipeline.
+1. Add retrieval/generation evaluation sets with expected pages before changing
+   chunking, the similarity gate or the model.
+2. Consider streaming only after citation validation remains server-owned.
+3. Keep eligibility and scheme lookup out of the document pipeline.
+4. Treat OCR, voice, agents and persistent history as separate milestones.
 
 Do not add Gemini to the eligibility path. The LLM can explain a completed
 evaluation, but the decision must remain code-owned and reproducible.

@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   CircleCheck,
   FileText,
   Info,
   Languages,
+  LoaderCircle,
   MessagesSquare,
   RefreshCw,
+  Search,
   Send,
   ShieldCheck,
   Sparkles,
+  TriangleAlert,
 } from 'lucide-react'
 
 import Badge from '@/components/ui/Badge'
@@ -17,66 +20,86 @@ import Card from '@/components/ui/Card'
 import Notice from '@/components/ui/Notice'
 import ModuleHeader from '@/components/workspace/ModuleHeader'
 import { ShieldMark } from '@/components/brand/Logo'
-import { useLanguage, useMessages } from '@/i18n'
-
-const INITIAL_THREAD = [
-  { id: 'example-question', role: 'user', kind: 'example' },
-  { id: 'example-answer', role: 'assistant', kind: 'example' },
-]
+import { LANGUAGES, useLanguage, useMessages } from '@/i18n'
+import { askAssistant, listDocuments } from '@/services/api'
 
 const TRUST_ICONS = [ShieldCheck, Languages, CircleCheck]
 
 export default function AssistantPage() {
-  const { t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
   const copy = useMessages()
-  const [thread, setThread] = useState(INITIAL_THREAD)
   const [draft, setDraft] = useState('')
-  const inputRef = useRef(null)
-  const scrollRef = useRef(null)
-  const threadLengthRef = useRef(INITIAL_THREAD.length)
+  const [documentId, setDocumentId] = useState('')
+  const [documents, setDocuments] = useState([])
+  const [result, setResult] = useState(null)
+  const [lastQuestion, setLastQuestion] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
 
+  // An answer is only shown for the language it was generated in. Changing
+  // the global language therefore hides it without needing a state effect.
+  const visibleResult = result?.language === language ? result : null
+
+  // The optional document filter never blocks asking a question.
   useEffect(() => {
-    if (thread.length === threadLengthRef.current) return
-    threadLengthRef.current = thread.length
+    let active = true
+    listDocuments()
+      .then((data) => {
+        if (!active) return
+        const indexed = (data?.documents ?? []).filter(
+          (document) => document.status === 'indexed',
+        )
+        setDocuments(indexed)
+        setDocumentId((current) =>
+          indexed.some((document) => document.document_id === current)
+            ? current
+            : '',
+        )
+      })
+      .catch(() => {
+        if (active) setDocuments([])
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
-    const node = scrollRef.current
-    if (!node) return
+  const submit = async (questionText) => {
+    const question = questionText.trim()
+    if (!question || busy) return
 
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches
+    setLastQuestion(question)
+    setBusy(true)
+    setError(false)
+    setResult(null)
 
-    node.scrollTo({
-      top: thread.length <= INITIAL_THREAD.length ? 0 : node.scrollHeight,
-      behavior: reduceMotion ? 'auto' : 'smooth',
-    })
-  }, [thread])
+    try {
+      const data = await askAssistant({
+        question,
+        language,
+        document_id: documentId || null,
+      })
+      setResult(data)
+    } catch {
+      // The API envelope is already sanitised server-side; show generic copy.
+      setError(true)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    const question = draft.trim()
-    if (!question) return
-
-    setThread((previous) => [
-      ...previous,
-      {
-        id: `question-${Date.now()}`,
-        role: 'user',
-        kind: 'text',
-        text: question,
-      },
-      {
-        id: `reply-${Date.now()}`,
-        role: 'assistant',
-        kind: 'preview',
-      },
-    ])
+    const question = draft
     setDraft('')
+    submit(question)
   }
 
-  const applySuggestion = (suggestion) => {
-    setDraft(suggestion)
-    inputRef.current?.focus()
+  const reset = () => {
+    setResult(null)
+    setError(false)
+    setLastQuestion('')
+    setDraft('')
   }
 
   return (
@@ -86,11 +109,11 @@ export default function AssistantPage() {
         eyebrow={copy.assistant.eyebrow}
         title={copy.assistant.title}
         description={copy.assistant.description}
-        badge={t('common.preview')}
+        badge={t('common.live')}
       />
 
       <Notice
-        tone="preview"
+        tone="info"
         title={copy.assistant.noticeTitle}
         className="mt-6"
       >
@@ -98,7 +121,7 @@ export default function AssistantPage() {
       </Notice>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_19rem]">
-        <Card className="flex h-[30rem] flex-col overflow-hidden sm:h-[34rem] lg:h-[36rem]">
+        <Card className="flex min-h-[34rem] flex-col overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-200/70 px-4 py-3.5 sm:px-5">
             <div className="flex min-w-0 items-center gap-2.5">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-950 text-cream-50">
@@ -114,12 +137,13 @@ export default function AssistantPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="coral">{copy.assistant.previewBadge}</Badge>
+              <Badge tone="success">{t('common.live')}</Badge>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setThread(INITIAL_THREAD)}
+                onClick={reset}
+                disabled={busy}
               >
                 <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                 {copy.assistant.reset}
@@ -127,84 +151,207 @@ export default function AssistantPage() {
             </div>
           </div>
 
+          <div className="grid gap-3 border-b border-ink-200/70 bg-white px-4 py-3 sm:grid-cols-2 sm:px-5">
+            <div>
+              <label
+                htmlFor="assistant-language"
+                className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-500"
+              >
+                {copy.assistant.languageLabel}
+              </label>
+              <select
+                id="assistant-language"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-cream-50 px-2.5 text-xs text-ink-800"
+              >
+                {LANGUAGES.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.nativeLabel}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="assistant-document"
+                className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-500"
+              >
+                {copy.assistant.documentLabel}
+              </label>
+              <select
+                id="assistant-document"
+                value={documentId}
+                onChange={(event) => setDocumentId(event.target.value)}
+                className="mt-1 h-9 w-full rounded-lg border border-ink-200 bg-cream-50 px-2.5 text-xs text-ink-800"
+              >
+                <option value="">{copy.assistant.documentAll}</option>
+                {documents.map((document) => (
+                  <option
+                    key={document.document_id}
+                    value={document.document_id}
+                  >
+                    {document.original_filename}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div
-            ref={scrollRef}
-            className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-cream-50/60 px-4 py-5 sm:px-5"
+            className="min-h-0 flex-1 space-y-4 bg-cream-50/60 px-4 py-5 sm:px-5"
             aria-live="polite"
+            aria-busy={busy}
           >
-            {thread.map((message) => {
-              if (message.role === 'user') {
-                return (
-                  <div key={message.id} className="flex justify-end">
-                    <div className="max-w-[88%] rounded-2xl rounded-br-md bg-brand-950 px-4 py-3 text-[13px] leading-relaxed text-cream-50">
-                      {message.kind === 'example'
-                        ? copy.assistant.question
-                        : message.text}
-                    </div>
-                  </div>
-                )
-              }
-
-              if (message.kind === 'example') {
-                return (
-                  <div key={message.id} className="flex gap-2.5">
-                    <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-950 text-cream-50">
-                      <ShieldMark className="h-4 w-4" />
-                    </span>
-                    <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-ink-200 bg-white p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone="coral">
-                          {copy.assistant.exampleBadge}
-                        </Badge>
-                      </div>
-                      <p className="mt-2.5 text-[13px] leading-relaxed text-ink-700">
-                        {copy.assistant.answer}
-                      </p>
-
-                      <div className="mt-3.5 rounded-xl border border-teal-200 bg-teal-50/50 p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-medium text-ink-500">
-                            <FileText
-                              className="h-3.5 w-3.5 shrink-0"
-                              aria-hidden="true"
-                            />
-                            <span className="truncate">
-                              {copy.assistant.file}
-                            </span>
-                          </span>
-                          <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[9px] font-semibold text-teal-700 ring-1 ring-inset ring-teal-200">
-                            {copy.assistant.page}
-                          </span>
-                        </div>
-                        <p className="mt-2 border-l-2 border-teal-300 pl-2.5 text-[11.5px] italic leading-relaxed text-ink-500">
-                          {copy.assistant.excerpt}
-                        </p>
-                        <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-teal-700">
-                          {copy.assistant.sourceLabel}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              }
-
-              return (
-                <div key={message.id} className="flex gap-2.5">
-                  <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-950 text-cream-50">
-                    <ShieldMark className="h-4 w-4" />
-                  </span>
-                  <div className="max-w-[92%] rounded-2xl rounded-tl-md border border-coral-200 bg-coral-50/70 p-4">
-                    <Badge tone="coral">{copy.assistant.previewBadge}</Badge>
-                    <p className="mt-2.5 text-[13px] font-semibold text-coral-900">
-                      {copy.assistant.previewReplyTitle}
-                    </p>
-                    <p className="mt-1.5 text-[13px] leading-relaxed text-ink-600">
-                      {copy.assistant.previewReply}
-                    </p>
-                  </div>
+            {busy && (
+              <div className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-white p-4">
+                <LoaderCircle
+                  className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-brand-700"
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-brand-950">
+                    {copy.assistant.loadingTitle}
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-500">
+                    {copy.assistant.loadingCopy}
+                  </p>
                 </div>
-              )
-            })}
+              </div>
+            )}
+
+            {!busy && error && (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4">
+                <div className="flex items-center gap-2">
+                  <TriangleAlert
+                    className="h-4 w-4 text-rose-700"
+                    aria-hidden="true"
+                  />
+                  <p className="text-sm font-semibold text-rose-900">
+                    {copy.assistant.errorTitle}
+                  </p>
+                </div>
+                <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
+                  {copy.assistant.errorCopy}
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => submit(lastQuestion)}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  {copy.assistant.retry}
+                </Button>
+              </div>
+            )}
+
+            {!busy && !error && visibleResult?.insufficient_evidence && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                <div className="flex items-center gap-2">
+                  <Info
+                    className="h-4 w-4 text-amber-700"
+                    aria-hidden="true"
+                  />
+                  <p className="text-sm font-semibold text-amber-950">
+                    {copy.assistant.insufficientTitle}
+                  </p>
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-ink-700">
+                  {visibleResult.answer}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-ink-500">
+                  {copy.assistant.insufficientCopy}
+                </p>
+              </div>
+            )}
+
+            {!busy &&
+              !error &&
+              visibleResult &&
+              !visibleResult.insufficient_evidence && (
+              <div className="flex gap-2.5">
+                <span className="mt-1 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-950 text-cream-50">
+                  <ShieldMark className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 max-w-[92%] flex-1 rounded-2xl rounded-tl-md border border-ink-200 bg-white p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="success">{copy.assistant.answerTitle}</Badge>
+                    {visibleResult.citations.length > 0 && (
+                      <Badge tone="teal">
+                        {t('assistant.sourceBadge', {
+                          count: visibleResult.citations.length,
+                        })}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="mt-3 whitespace-pre-line text-[13px] leading-relaxed text-ink-700">
+                    {visibleResult.answer}
+                  </p>
+
+                  {visibleResult.citations.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {visibleResult.citations.map((citation) => (
+                        <details
+                          key={citation.evidence_id}
+                          className="group rounded-xl border border-teal-200 bg-teal-50/40"
+                        >
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <FileText
+                                className="h-3.5 w-3.5 shrink-0 text-teal-700"
+                                aria-hidden="true"
+                              />
+                              <span className="truncate text-xs font-medium text-brand-950">
+                                {citation.document_title}
+                              </span>
+                            </span>
+                            <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-inset ring-teal-200">
+                              {t('assistant.pageLabel', {
+                                page: citation.page,
+                              })}
+                            </span>
+                          </summary>
+                          <div className="border-t border-teal-200/70 px-3 py-2.5">
+                            <p className="border-l-2 border-teal-300 pl-2.5 text-[11.5px] italic leading-relaxed text-ink-600">
+                              {citation.excerpt}
+                            </p>
+                            <p className="mt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-teal-700">
+                              {copy.assistant.sourceLabel}
+                            </p>
+                          </div>
+                        </details>
+                      ))}
+                    </div>
+                  )}
+
+                  {visibleResult.message && (
+                    <p className="mt-3 flex items-center gap-1.5 text-[10px] text-ink-400">
+                      <ShieldCheck
+                        className="h-3 w-3 shrink-0"
+                        aria-hidden="true"
+                      />
+                      {visibleResult.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!busy && !error && !visibleResult && (
+              <div className="flex min-h-[16rem] flex-col items-center justify-center px-4 text-center">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-cream-100 text-brand-700">
+                  <Search className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <p className="mt-3 text-sm font-semibold text-brand-950">
+                  {copy.assistant.emptyTitle}
+                </p>
+                <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-ink-500">
+                  {copy.assistant.emptyCopy}
+                </p>
+              </div>
+            )}
           </div>
 
           <form
@@ -212,22 +359,23 @@ export default function AssistantPage() {
             className="border-t border-ink-200/70 bg-white p-3 sm:p-4"
           >
             <label htmlFor="assistant-question" className="sr-only">
-              {copy.assistant.composerLabel}
+              {copy.assistant.questionLabel}
             </label>
             <div className="flex items-center gap-2">
               <input
                 id="assistant-question"
-                ref={inputRef}
                 type="text"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder={copy.assistant.composerPlaceholder}
-                className="h-11 min-w-0 flex-1 rounded-xl border border-ink-200 bg-cream-50 px-3.5 text-sm text-ink-800 placeholder:text-ink-400 focus:border-brand-400 focus:bg-white"
+                placeholder={copy.assistant.questionPlaceholder}
+                disabled={busy}
+                maxLength={1000}
+                className="h-11 min-w-0 flex-1 rounded-xl border border-ink-200 bg-cream-50 px-3.5 text-sm text-ink-800 placeholder:text-ink-400 focus:border-brand-400 focus:bg-white disabled:opacity-60"
               />
               <Button
                 type="submit"
                 size="icon"
-                disabled={!draft.trim()}
+                disabled={!draft.trim() || busy}
                 aria-label={copy.assistant.send}
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
@@ -256,8 +404,12 @@ export default function AssistantPage() {
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={() => applySuggestion(suggestion)}
-                  className="w-full rounded-xl border border-ink-200 bg-cream-50 px-3 py-2.5 text-left text-xs leading-relaxed text-ink-600 transition hover:border-ink-300 hover:bg-white hover:text-brand-950"
+                  disabled={busy}
+                  onClick={() => {
+                    setDraft(suggestion)
+                    submit(suggestion)
+                  }}
+                  className="w-full rounded-xl border border-ink-200 bg-cream-50 px-3 py-2.5 text-left text-xs leading-relaxed text-ink-600 transition hover:border-ink-300 hover:bg-white hover:text-brand-950 disabled:opacity-60"
                 >
                   {suggestion}
                 </button>
@@ -289,6 +441,9 @@ export default function AssistantPage() {
                 )
               })}
             </ul>
+            <p className="mt-4 border-t border-ink-200/70 pt-3 text-[10px] leading-relaxed text-ink-400">
+              {copy.assistant.disclaimer}
+            </p>
           </Card>
         </aside>
       </div>

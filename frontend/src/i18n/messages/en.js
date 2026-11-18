@@ -62,8 +62,8 @@ const en = {
     preview: 'Preview',
     systemLive: 'Live services',
     demo: 'Demo',
-    buildLabel: 'Build 0.2 · Day 2',
-    buildSub: 'Schemes, eligibility and documents are live · Assistant is a preview',
+    buildLabel: 'Build 0.2 · Day 4',
+    buildSub: 'All four modules are live · Answers grounded in documents',
   },
   nav: {
     capabilities: 'Services',
@@ -210,7 +210,7 @@ const en = {
       title: 'Five connected services. One source of truth.',
       description:
         'Discovery, eligibility, documents and conversation share one evidence layer, so every answer can be traced back to an official source.',
-      note: 'Scheme discovery, eligibility and document intelligence are live. Only the assistant is a clearly marked preview.',
+      note: 'Scheme discovery, eligibility, documents and the grounded assistant are all live.',
       cta: 'Explore this service',
       across: 'Across every answer',
       items: {
@@ -322,7 +322,7 @@ const en = {
       title: 'Support should feel',
       accent: 'within reach.',
       description:
-        'Explore the live scheme catalogue, check your eligibility, search official PDFs, or open the clearly marked assistant preview.',
+        'Explore the live scheme catalogue, check your eligibility, search official PDFs, or ask the assistant about them.',
       primary: 'Open the workspace',
       secondary: 'Explore services',
       disclaimer: 'Hackathon prototype. Not an official government service.',
@@ -333,7 +333,7 @@ const en = {
     greeting: 'Namaskaram.',
     title: 'What can we help with today?',
     description:
-      'Scheme discovery, eligibility and document intelligence are live today. The assistant remains a clearly marked preview until Day 4.',
+      'Scheme discovery, eligibility, document intelligence and the grounded assistant are live today.',
     snapshot: {
       api: 'API status',
       online: 'Online',
@@ -370,7 +370,7 @@ const en = {
     },
     services: {
       title: 'Explore services',
-      copy: 'Three live services and one clearly labelled preview.',
+      copy: 'Four live services built on the same evidence layer.',
       badge: 'Schemes & eligibility live',
       cta: 'Open service',
     },
@@ -446,7 +446,7 @@ const en = {
           day: 'Day 4',
           title: 'Evidence-backed assistant',
           detail: 'Grounded answers with citations',
-          state: 'current',
+          state: 'done',
         },
         {
           day: 'Day 5–7',
@@ -455,9 +455,9 @@ const en = {
           state: 'next',
         },
       ],
-      nextLabel: 'Next up · Day 4',
+      nextLabel: 'Available now · Day 4',
       nextCopy: 'Grounded answers with page citations in all three languages.',
-      nextCta: 'Open assistant preview',
+      nextCta: 'Ask the assistant',
     },
     trust: {
       title: 'Our promise',
@@ -748,44 +748,50 @@ const en = {
     },
   },
   assistant: {
-    eyebrow: 'CivicSaathi assistant · Preview',
+    eyebrow: 'CivicSaathi assistant · Live',
     title: 'Ask in your own words.',
     description:
-      'A calm place to ask about schemes, documents and next steps. Answers will always show where they came from.',
-    noticeTitle: 'A conversation preview',
+      'Ask about schemes, documents and next steps. Every answer comes only from the official documents you uploaded and shows its sources.',
+    noticeTitle: 'Grounded in your documents',
     noticeCopy:
-      'The assistant is not connected to Gemini yet. The example below shows the intended experience; sending a question will not generate a real answer.',
+      'The assistant retrieves relevant passages first, then answers only from that evidence. It is a prototype, not official advice, and it never decides eligibility.',
     chatTitle: 'CivicSaathi',
-    chatSubtitle: 'Grounded in official documents',
-    previewBadge: 'Preview',
-    exampleBadge: 'Example answer',
-    question: 'What documents do I need for farmer support?',
-    answer:
-      'The notification lists three documents: an Aadhaar card, a ration card, and a recent income certificate from the Village Office. Applications are submitted at the nearest Akshaya Centre.',
-    sourceLabel: 'Example source',
-    file: 'demo_notification.pdf',
-    page: 'Page 3',
-    excerpt:
-      '“Applicants shall submit proof of identity, proof of residence and an annual income certificate issued by the Village Office...”',
+    chatSubtitle: 'Answers with page citations',
+    languageLabel: 'Answer language',
+    documentLabel: 'Search within',
+    documentAll: 'All uploaded documents',
+    questionLabel: 'Your question',
+    questionPlaceholder: 'Type your question…',
+    send: 'Send question',
+    composerHint: 'Up to 1000 characters · No personal details are stored',
+    emptyTitle: 'Start with a question',
+    emptyCopy:
+      'Upload an official PDF in the Documents module, then ask what it says. Choose an example below to begin.',
+    loadingTitle: 'Reading your documents…',
+    loadingCopy: 'Finding relevant passages and checking the sources.',
+    answerTitle: 'Answer',
+    sourceBadge: '{count} sources',
+    sourceLabel: 'Source',
+    pageLabel: 'Page {page}',
+    showExcerpt: 'Show source excerpt',
+    hideExcerpt: 'Hide source excerpt',
+    insufficientTitle: 'Not enough information in the documents',
+    insufficientCopy: 'Please upload the relevant official document and ask again.',
+    errorTitle: 'The assistant could not answer',
+    errorCopy: 'Something went wrong while preparing a grounded answer.',
+    retry: 'Try again',
+    reset: 'New question',
     suggestionsTitle: 'Try asking',
     suggestions: [
-      'How do I apply?',
-      'Which documents are needed?',
-      'Where is the nearest office?',
+      'What documents are required?',
+      'What is the last date to apply?',
+      'What are the main conditions of this scheme?',
     ],
-    composerPlaceholder: 'Type your question…',
-    composerLabel: 'Your question',
-    you: 'You',
-    send: 'Send',
-    composerHint: 'Preview only · The assistant connects on Day 4.',
-    previewReplyTitle: 'This is where the answer will appear.',
-    previewReply:
-      'The assistant is not connected in this design preview. On Day 4, it will answer only from uploaded documents and show the file, page and excerpt.',
     trustTitle: 'Built to be checked',
     trust: [
       {
         title: 'Evidence first',
-        copy: 'The assistant retrieves passages before it writes a single word.',
+        copy: 'Passages are retrieved before a single word is written.',
       },
       {
         title: 'Your language',
@@ -796,7 +802,8 @@ const en = {
         copy: 'If the documents do not contain the answer, it says so.',
       },
     ],
-    reset: 'Reset conversation',
+    disclaimer:
+      'Prototype only · Not an official government service · Verify on the official source.',
   },
   documents: {
     eyebrow: 'Document intelligence · Live',

@@ -6,10 +6,11 @@ A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
 into clear, verifiable guidance in English, Malayalam or Hindi.
 
-> **Build status: Day 3 of 7 complete.** The foundation, live telemetry, a
+> **Build status: Day 4 of 7 complete.** The foundation, live telemetry, a
 > corrected and re-verified 15-scheme catalogue, a deterministic eligibility
-> engine and a live document-intelligence pipeline are working. The RAG assistant
-> is clearly marked as a preview rather than shipped as a mock.
+> engine, a live document-intelligence pipeline and an evidence-grounded
+> multilingual assistant are wired end to end. Automated tests mock Gemini by
+> default; a live Gemini call is a separate opt-in check, not a default test.
 
 Built for **NxtWave IDEA//FORGE — Civic Pulse track**.
 
@@ -33,21 +34,25 @@ CIVICSAATHI AI takes the opposite approach:
 
 ## What works today
 
-| Area | Day 3 state |
+| Area | Day 4 state |
 | --- | --- |
 | Marketing site | Responsive landing page with trilingual answer preview, problem framing, workflow and trust sections |
-| Workspace | Dashboard shell, sidebar, mobile drawer, live/preview labels, 404 page |
+| Workspace | Dashboard shell, sidebar, mobile drawer, live module labels, 404 page |
 | Scheme catalogue | Search, nine category filters, central/state filters, pagination, loading/empty/error states |
 | Scheme detail | Full verified record with benefits, documents, steps, conditions and official sources |
 | Eligibility | Optional 34-field form, tri-state answers, deterministic results and per-condition explanations |
 | Data layer | 15 curated schemes, 53 reusable conditions (44 profile, 9 manual), all source-linked and validated by Pydantic |
 | Document intelligence | Secure PDF upload, PyMuPDF extraction, page-aware overlapping chunks, multilingual embeddings, persistent ChromaDB search with page citations |
 | Backend | FastAPI app with typed settings, CORS, logging, lifespan state, threadpool document work and consistent error envelopes |
-| Failure states | Skeletons, offline banner, retry actions, 404 handling, upload progress and stale-data protection |
-| Quality | 190 backend tests passing (1 gated model test), Ruff clean, Oxlint clean, production frontend build succeeds |
+| Assistant | Gemini-backed answers grounded in retrieved passages, EN/ML/HI output, validated backend citations and honest insufficient-evidence states |
+| Failure states | Skeletons, offline banner, retry actions, 404 handling, upload progress, assistant timeout/error states and stale-data protection |
+| Quality | 229 backend tests passing (2 gated), 9 frontend tests, Ruff/Oxlint clean, production frontend build succeeds |
 
-Document intelligence is live in English, Malayalam and Hindi. The RAG assistant
-remains clearly labelled as a preview; it does not pretend to be functional yet.
+Document intelligence is live in English, Malayalam and Hindi. The assistant is
+also live in all three languages once `GEMINI_API_KEY` is configured: it retrieves
+first, answers only from that evidence, and says when the documents do not contain
+the answer. Without a key, `/api/v1/assistant/ask` returns a safe `503` while
+document search keeps working. See [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md).
 
 ## Screenshots
 
@@ -81,7 +86,7 @@ document pages are available at `/app/schemes`, `/app/eligibility` and
 │                        ├── /app/schemes/:id      (live)         │
 │                        ├── /app/eligibility      (live)         │
 │                        ├── /app/documents        (live)         │
-│                        └── /app/assistant        (preview)      │
+│                        └── /app/assistant        (live)         │
 │                                                                 │
 │  Axios client · cancellation · error normalization              │
 │  30 s polling · loading / empty / offline / stale states        │
@@ -101,8 +106,10 @@ document pages are available at `/app/schemes`, `/app/eligibility` and
 │  GET  /documents/{id}        document metadata                  │
 │  POST /documents/search      page-cited passages                │
 │  DELETE /documents/{id}      scoped document deletion           │
+│  POST /assistant/ask          grounded answer + citations        │
 │                                                                 │
 │  routes → services → repository / store                         │
+│  assistant_service.py        retrieval → evidence → validation  │
 │  core/source_policy.py       HTTPS official-source allowlist    │
 │  core/config.py              server-side secrets only           │
 └──────────────┬─────────────────────────────┬─────────────────────┘
@@ -111,7 +118,12 @@ document pages are available at `/app/schemes`, `/app/eligibility` and
  │ data/sample_schemes/       │  │ backend/data/documents/ + .chroma  │
  │ schemes.json               │  │ PDFs, JSON registry, ChromaDB      │
  │ 15 schemes · 53 conditions │  │ multilingual-e5-small embeddings   │
- └────────────────────────────┘  └────────────────────────────────────┘
+ └────────────────────────────┘  └───────────────┬────────────────────┘
+                                                 │ bounded passages
+                                 ┌───────────────▼────────────────────┐
+                                 │ Google Gemini (server-side key)    │
+                                 │ structured JSON · evidence ids only│
+                                 └────────────────────────────────────┘
 ```
 
 ### Document pipeline (Day 3)
@@ -133,14 +145,37 @@ query     → "query: " embedding → nearest passages → page + filename citat
   deletion scoped to one `document_id`.
 - **Honest retrieval:** `top_k` bounded (1–20), optional document filter,
   explicit no-relevant-evidence response, and a notice that similarity is not
-  proof of correctness. No answers are generated in this release.
+  proof of correctness. Document search itself never generates an answer.
 
-Remaining milestones: Gemini RAG with page citations (Day 4), trilingual polish
-and evaluation (Day 5–6), deployment (Day 7). Supabase persistence is deferred;
+### Assistant pipeline (Day 4)
+
+```text
+question → validation → language + optional document filter
+         → multilingual retrieval → evidence quality gate
+         → bounded Gemini prompt → strict JSON parsing
+         → evidence-id validation → backend-built citations → response
+```
+
+- **No evidence, no model call.** Insufficient retrieval returns a localized
+  no-answer response immediately.
+- **Untrusted passages.** Embedded instructions in PDF text never change the
+  assistant's rules; the system instruction forbids secret disclosure, invented
+  facts and eligibility decisions.
+- **Backend-owned citations.** Gemini returns only `evidence_id` values. Titles,
+  ids, pages and excerpts come from the retrieved passage; fabricated ids are
+  discarded and a single corrective retry is allowed.
+- **Bounded by design.** Retrieval, context characters and output tokens are
+  capped; the request has a timeout and errors map to safe `detail`/`code`
+  envelopes. Nothing is persisted.
+
+Remaining milestones: trilingual evaluation and polish (Day 5–6), deployment
+(Day 7). Supabase persistence is deferred;
 the validated JSON repository and ChromaDB store are the active providers and
 the seams for a future database.
 
-Read the full design in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the
+Read the grounded-generation design in
+[`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md), the full design in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the
 dataset policy in
 [`data/sample_schemes/README.md`](data/sample_schemes/README.md).
 
@@ -154,7 +189,7 @@ dataset policy in
 | Data (deferred) | Supabase PostgreSQL |
 | Eligibility | Pure-Python three-valued rule evaluator, data-driven DNF rules |
 | Documents (Day 3) | PyMuPDF, sentence-transformers `intfloat/multilingual-e5-small`, ChromaDB, python-multipart |
-| AI (planned) | Google Gemini, evidence-first RAG (Day 4) |
+| AI (Day 4) | Official `google-genai` SDK, evidence-first RAG, structured JSON output |
 | Deployment (planned) | Vercel (frontend), Render (backend) |
 
 ## Repository layout
@@ -166,10 +201,10 @@ CIVICSAATHI-AI/
 │   │   ├── core/                  # settings, logging, source allowlist
 │   │   ├── database/              # scheme repository, document store + ChromaDB
 │   │   ├── models/                # Pydantic API, dataset and document contracts
-│   │   ├── routes/                # health, system, schemes, eligibility, documents
-│   │   ├── services/              # responses, rules engine, readiness, document pipeline
+│   │   ├── routes/                # health, system, schemes, eligibility, documents, assistant
+│   │   ├── services/              # rules, readiness, document pipeline, Gemini, assistant RAG
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── tests/                     # 190 unit/API tests + gated model integration test
+│   ├── tests/                     # 229 unit/API tests + gated integration tests
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── README.md
@@ -180,7 +215,7 @@ CIVICSAATHI-AI/
 │   │   ├── hooks/                 # snapshot polling
 │   │   ├── i18n/                  # EN/ML/HI catalogs
 │   │   ├── lib/                   # class and formatting helpers
-│   │   ├── pages/                 # landing, dashboard, schemes, eligibility, documents
+│   │   ├── pages/                 # landing, dashboard, schemes, eligibility, documents, assistant
 │   │   ├── services/api.js        # Axios client and error normalization
 │   │   └── index.css              # design tokens and motion rules
 │   ├── public/
@@ -190,6 +225,7 @@ CIVICSAATHI-AI/
 │   └── README.md                  # dataset, rule and source policy
 ├── docs/
 │   ├── ARCHITECTURE.md
+│   ├── DAY_4_GEMINI.md
 │   └── screenshots/
 └── README.md
 ```
@@ -254,15 +290,17 @@ offline state if the backend is not running.
 | <http://localhost:5173/app/schemes> | Verified catalogue with search and filters |
 | <http://localhost:5173/app/eligibility> | Optional form and preliminary results |
 | <http://localhost:5173/app/documents> | Upload a text-based PDF and search its pages |
+| <http://localhost:5173/app/assistant> | Ask a grounded question (requires a configured Gemini key) |
 | <http://localhost:5173/app> | Workspace dashboard with live API telemetry |
 | <http://127.0.0.1:8000/docs> | Swagger UI |
 | <http://127.0.0.1:8000/api/v1/schemes> | 15 curated schemes, paginated |
 | <http://127.0.0.1:8000/api/v1/documents> | Empty list before the first upload |
-| <http://127.0.0.1:8000/api/v1/health/readiness> | `degraded`, with `scheme_dataset` and `vector_store: ok` |
+| <http://127.0.0.1:8000/api/v1/health/readiness> | `degraded` while Supabase is unconfigured; dataset, vector store and assistant features are `ok`/`live` |
 
-Readiness is expected to be `degraded` right now: the curated dataset and vector
-store are `ok`, while Supabase, Gemini and the assistant are unconfigured or
-scheduled for later days. That is a truthful signal, not a failure.
+Readiness remains expectedly `degraded` while Supabase is intentionally
+unconfigured. Gemini is reported `ok` only when a key is present; this checks
+credential presence, not a live provider response. The assistant feature itself
+is registered as `live`. That is a truthful signal, not a failure.
 
 ## Configuration
 
@@ -274,8 +312,14 @@ Frontend variables live in `frontend/.env.local` (copied from `.env.example`).
 | `ENVIRONMENT` | Backend | `development`, `staging`, `production` |
 | `LOG_LEVEL` | Backend | Defaults to `INFO` |
 | `CORS_ORIGINS` | Backend | Comma-separated allowed origins |
-| `GEMINI_API_KEY` | Backend | Server-side only; Day 4 |
+| `GEMINI_API_KEY` | Backend | Server-side only; empty disables assistant answers |
 | `GEMINI_MODEL` | Backend | Defaults to `gemini-2.5-flash` |
+| `ASSISTANT_TOP_K` | Backend | Retrieved passages before the quality gate; default `5` |
+| `ASSISTANT_MIN_SIMILARITY` | Backend | Heuristic evidence threshold on top of the Day 3 distance gate; default `0.30` |
+| `ASSISTANT_MAX_EVIDENCE_CHUNKS` | Backend | Maximum passages sent to Gemini; default `5` |
+| `ASSISTANT_MAX_CONTEXT_CHARS` | Backend | Total excerpt budget; default `12000` |
+| `ASSISTANT_REQUEST_TIMEOUT_SECONDS` | Backend | Gemini request timeout; default `30` |
+| `ASSISTANT_MAX_OUTPUT_TOKENS` | Backend | Generation cap; default `900` |
 | `SUPABASE_URL` | Backend | Deferred; JSON repository is active |
 | `SUPABASE_SERVICE_ROLE_KEY` | Backend | Server-only; never ship to the client |
 | `CHROMA_PERSIST_DIR` | Backend | Defaults to `backend/.chroma` |
@@ -312,6 +356,7 @@ belongs there. All secrets and storage paths stay in the backend environment.
 | `GET` | `/api/v1/documents/{document_id}` | Full document metadata |
 | `POST` | `/api/v1/documents/search` | Retrieve real passages with page citations |
 | `DELETE` | `/api/v1/documents/{document_id}` | Delete one document, its file and its vectors |
+| `POST` | `/api/v1/assistant/ask` | Grounded answer with validated citations (no history) |
 
 List query parameters: `language`, `q` (max 100 characters), `category`,
 `government_level`, `page` and `page_size` (1–50, default 12). An empty result
@@ -338,12 +383,13 @@ Document search accepts `query` (1–1000 characters), optional `top_k`
 (1–20, default 5) and optional `document_id`. Results are actual indexed
 passages with filename and page number; no match returns
 `has_evidence: false` with an explicit no-evidence message. Every response notes
-that similarity is not proof of factual correctness. See
-[`backend/README.md`](backend/README.md) for the full request/response contract.
-
-Not implemented yet:
-
-- `POST /api/v1/assistant/query` (Day 4)
+that similarity is not proof of factual correctness. Assistant requests accept
+`question`, optional `language` (`en`, `ml`, `hi`) and optional `document_id`, and
+reject unknown fields such as `system_prompt`. Responses include the answer,
+backend-built citations and a localized insufficient-evidence state. There is no
+`/assistant/query` endpoint and no history endpoint. See
+[`backend/README.md`](backend/README.md) and
+[`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md) for the full contracts.
 
 ## Trust and safety rules
 
@@ -362,12 +408,17 @@ Not implemented yet:
 6. **No profile persistence.** Eligibility answers are evaluated in memory,
    never stored and never written to browser storage.
 7. **Evidence or nothing.** Document results are real passages with a file and
-   page citation, or say the evidence was not found. No answers are generated in
-   Day 3.
+   page citation, or say the evidence was not found. Assistant answers are
+   generated only from those passages and carry server-built citations.
 8. **Secure document handling.** PDFs are validated by content, capped by size
    and pages, never executed, and stored under generated names; no API response
    exposes a server path.
 9. **Secrets stay server-side.** No API key is bundled, logged or committed.
+10. **Prompt injection is contained.** Retrieved passages are untrusted data;
+    embedded instructions cannot change rules or reveal secrets.
+11. **No eligibility decisions from the model.** The assistant states document
+    conditions; only the deterministic Day 2 engine produces a preliminary
+    outcome.
 
 ## Quality checks
 
@@ -382,16 +433,23 @@ cd backend
 $env:CIVICSAATHI_RUN_MODEL_TESTS = '1'
 .\.venv\Scripts\python.exe -m pytest tests/integration -q
 
+# Opt-in LIVE Gemini test (spends a real API call; never needed by default)
+$env:CIVICSAATHI_RUN_GEMINI_TESTS = '1'
+.\.venv\Scripts\python.exe -m pytest tests/integration/test_gemini_integration.py -q
+
 # Frontend
 cd frontend
 npm run lint
+npm test
 npm run build
 ```
 
-Current Day 3 result: **190 backend tests pass**, 1 real-model integration test
-is gated (and passes when enabled), Ruff and Oxlint are clean and the Vite
-production build completes. Screenshots were verified at 1440 px and 390 px in
-all three languages with zero horizontal overflow.
+Current Day 4 result: **229 backend tests pass** with 2 gated integration
+tests skipped, **9 frontend tests pass**, Ruff and Oxlint are clean and the Vite
+production build completes. Gemini is mocked in the default suite; the live test
+is opt-in and no prompt, answer or key is logged. Screenshots of the Day 1/2
+shell were verified at 1440 px and 390 px in all three languages with zero
+horizontal overflow.
 
 ## Roadmap
 
@@ -400,7 +458,7 @@ all three languages with zero horizontal overflow.
 | 1 | Foundation | Design system, routes, live API contract, health telemetry |
 | 2 | Schemes & eligibility | 15-scheme verified catalogue, search and deterministic rules engine |
 | 3 | Document intelligence | PDF upload/extraction, page-aware chunking, multilingual embeddings, ChromaDB retrieval with page citations |
-| 4 | Evidence-backed assistant | Gemini RAG in English, Malayalam and Hindi with page citations |
+| 4 | Evidence-backed assistant | Complete: Gemini RAG in EN/ML/HI with validated page citations |
 | 5 | Trilingual journey | Full English, Malayalam and Hindi experience and end-to-end UX polish |
 | 6 | Hardening | Evaluation set, failure-mode tests, accessibility and performance |
 | 7 | Deploy & demo | Vercel + Render deployment, demo script, submission assets |
@@ -420,6 +478,8 @@ The project is not deployed yet. When it is:
 - Mount a persistent disk for `CHROMA_PERSIST_DIR` and `DOCUMENT_STORAGE_DIR`
   (or replace ChromaDB with a managed vector store); allow time and disk for the
   embedding model on first boot.
+- Set `GEMINI_API_KEY` and, if needed, `GEMINI_MODEL` as backend environment
+  secrets. Never add them to `VITE_*` variables or the browser bundle.
 
 ## Disclaimer
 
@@ -427,6 +487,8 @@ CIVICSAATHI AI is a hackathon prototype and is not an official Government of
 Kerala service. Always verify scheme details on the official portal linked in
 each record. Eligibility results are preliminary and rule-based; final
 eligibility is determined by the relevant government authority. Document search
-returns source passages, not verified advice — check the official notice. The
+returns source passages, not verified advice — check the official notice.
+Generated assistant answers are grounded in uploaded documents but may be
+incomplete; verify every detail on the cited page and the official source. The
 illustrative answer card on the landing page is demo content, not an official
 answer.
