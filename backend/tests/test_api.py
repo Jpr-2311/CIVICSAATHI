@@ -43,7 +43,7 @@ def test_system_info_exposes_trilingual_support(client: TestClient) -> None:
     features = {feature["id"]: feature for feature in body["features"]}
     assert features["scheme-discovery"]["status"] == "live"
     assert features["eligibility"]["status"] == "live"
-    assert features["document-intelligence"]["status"] != "live"
+    assert features["document-intelligence"]["status"] == "live"
 
 
 def test_cors_allows_the_vite_dev_origin(client: TestClient) -> None:

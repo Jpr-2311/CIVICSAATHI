@@ -48,7 +48,7 @@ const SERVICES = [
     to: '/app/documents',
     icon: FileText,
     iconClass: 'bg-brand-50 text-brand-700',
-    status: 'preview',
+    status: 'live',
   },
   {
     id: 'assistant',

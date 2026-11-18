@@ -41,7 +41,7 @@ const QUICK_ACTIONS = [
     icon: MessagesSquare,
     status: 'preview',
   },
-  { id: 'documents', to: '/app/documents', icon: FileText, status: 'preview' },
+  { id: 'documents', to: '/app/documents', icon: FileText, status: 'live' },
 ]
 
 const READINESS_TONES = {
@@ -391,14 +391,14 @@ export default function DashboardPage() {
               {copy.dashboard.plan.nextLabel}
             </p>
             <h2 className="mt-2 font-display text-2xl leading-tight text-cream-50">
-              {copy.dashboard.plan.items[2].title}
+              {copy.dashboard.plan.items[3].title}
             </h2>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-cream-200/70">
               {copy.dashboard.plan.nextCopy}
             </p>
             <Button
               as={Link}
-              to="/app/documents"
+              to="/app/assistant"
               variant="white"
               size="sm"
               className="mt-4"

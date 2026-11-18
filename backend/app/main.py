@@ -16,11 +16,14 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.database.document_store import DocumentStore
 from app.database.scheme_repository import (
     DatasetUnavailableError,
     SchemeRepository,
 )
-from app.routes import eligibility, health, schemes, system
+from app.routes import documents, eligibility, health, schemes, system
+from app.services.document_service import DocumentService, DocumentServiceError
+from app.services.pdf_extractor import PDFValidationError
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -32,6 +35,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialise process-level state once, and clean up on shutdown."""
     app.state.started_at = datetime.now(UTC)
     app.state.scheme_repository = SchemeRepository(settings.scheme_dataset_path)
+    app.state.document_store = DocumentStore(
+        storage_dir=settings.document_storage_dir,
+        chroma_dir=settings.chroma_persist_dir,
+        collection_name=settings.document_collection_name,
+    )
+    app.state.document_service = DocumentService(app.state.document_store, settings)
     logger.info(
         "Starting %s v%s [%s] on prefix %s",
         settings.app_name,
@@ -67,6 +76,7 @@ app.include_router(health.router, prefix=settings.api_prefix)
 app.include_router(system.router, prefix=settings.api_prefix)
 app.include_router(schemes.router, prefix=settings.api_prefix)
 app.include_router(eligibility.router, prefix=settings.api_prefix)
+app.include_router(documents.router, prefix=settings.api_prefix)
 
 
 @app.get("/", include_in_schema=False)
@@ -115,6 +125,30 @@ async def dataset_unavailable_handler(
             "detail": str(exc),
             "code": "dataset_unavailable",
         },
+    )
+
+
+@app.exception_handler(PDFValidationError)
+async def pdf_validation_handler(
+    request: Request, exc: PDFValidationError
+) -> JSONResponse:
+    """Return a clear, safe reason for a rejected upload."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": str(exc), "code": exc.code},
+    )
+
+
+@app.exception_handler(DocumentServiceError)
+async def document_service_handler(
+    request: Request, exc: DocumentServiceError
+) -> JSONResponse:
+    """Return the documented error envelope for document operations."""
+    if exc.status_code >= 500:
+        logger.error("Document operation failed on %s: %s", request.url.path, exc)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": str(exc), "code": exc.code},
     )
 
 

@@ -8,6 +8,7 @@ isolation in later milestones.
 from datetime import UTC, datetime
 
 from app.core.config import Settings
+from app.database.document_store import DocumentStore
 from app.database.scheme_repository import SchemeRepository
 from app.models.schemas import (
     FeatureInfo,
@@ -58,11 +59,11 @@ FEATURES: list[FeatureInfo] = [
     FeatureInfo(
         id="document-intelligence",
         name="Document intelligence",
-        status="planned",
+        status="live",
         milestone="Day 3",
         description=(
-            "PDF extraction, semantic chunking, embeddings and ChromaDB "
-            "retrieval with page-level metadata preserved."
+            "Secure PDF extraction, page-aware chunking, multilingual "
+            "embeddings and persistent ChromaDB retrieval with page citations."
         ),
     ),
     FeatureInfo(
@@ -138,8 +139,30 @@ def _credential_check(
     )
 
 
+def _vector_store_check(
+    document_store: DocumentStore | None,
+) -> ReadinessCheck:
+    if document_store is None:
+        return ReadinessCheck(
+            id="vector_store",
+            label="ChromaDB vector store",
+            status="pending",
+            detail="The document store is still starting.",
+        )
+    status = document_store.vectors.status()
+    available = bool(status["available"])
+    return ReadinessCheck(
+        id="vector_store",
+        label="ChromaDB vector store",
+        status="ok" if available else "error",
+        detail=str(status["detail"]),
+    )
+
+
 def build_readiness(
-    settings: Settings, repository: SchemeRepository
+    settings: Settings,
+    repository: SchemeRepository,
+    document_store: DocumentStore | None = None,
 ) -> ReadinessResponse:
     """Report which dependencies are available and which are planned."""
     checks = [
@@ -167,12 +190,7 @@ def build_readiness(
             pending_detail="Credentials detected — RAG pipeline scheduled for Day 4.",
             missing_detail="GEMINI_API_KEY is not set. AI features are disabled.",
         ),
-        ReadinessCheck(
-            id="vector_store",
-            label="ChromaDB vector store",
-            status="pending",
-            detail="Provisioned with document ingestion on Day 3.",
-        ),
+        _vector_store_check(document_store),
     ]
 
     states = {check.status for check in checks}

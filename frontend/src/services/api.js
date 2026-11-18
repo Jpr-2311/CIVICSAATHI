@@ -83,7 +83,10 @@ function toParams(params) {
   )
 }
 
-async function request(path, { method = 'get', params, data, signal } = {}) {
+async function request(
+  path,
+  { method = 'get', params, data, signal, onUploadProgress } = {},
+) {
   try {
     const response = await api.request({
       url: path,
@@ -91,6 +94,7 @@ async function request(path, { method = 'get', params, data, signal } = {}) {
       params: toParams(params),
       data,
       signal,
+      onUploadProgress,
     })
     return response.data
   } catch (error) {
@@ -137,6 +141,47 @@ export function checkEligibility(profile, options = {}) {
   return request(`${API_PREFIX}/eligibility/check`, {
     method: 'post',
     data: profile,
+    signal: options.signal,
+  })
+}
+
+/** List stored PDFs with their processing status and passage counts. */
+export function listDocuments(options = {}) {
+  return request(`${API_PREFIX}/documents`, { signal: options.signal })
+}
+
+/** Read one document's full metadata (never a local filesystem path). */
+export function getDocument(documentId, options = {}) {
+  return request(`${API_PREFIX}/documents/${encodeURIComponent(documentId)}`, {
+    signal: options.signal,
+  })
+}
+
+/** Upload and index a PDF. Progress is reported by axios as a percentage. */
+export function uploadDocument(file, options = {}) {
+  const form = new FormData()
+  form.append('file', file)
+  return request(`${API_PREFIX}/documents/upload`, {
+    method: 'post',
+    data: form,
+    signal: options.signal,
+    onUploadProgress: options.onUploadProgress,
+  })
+}
+
+/** Delete a document, its stored PDF and all of its indexed passages. */
+export function deleteDocument(documentId, options = {}) {
+  return request(`${API_PREFIX}/documents/${encodeURIComponent(documentId)}`, {
+    method: 'delete',
+    signal: options.signal,
+  })
+}
+
+/** Retrieve real source passages with page citations. */
+export function searchDocuments(payload, options = {}) {
+  return request(`${API_PREFIX}/documents/search`, {
+    method: 'post',
+    data: payload,
     signal: options.signal,
   })
 }

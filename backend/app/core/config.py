@@ -48,6 +48,20 @@ class Settings(BaseSettings):
     supabase_service_role_key: SecretStr | None = None
     chroma_persist_dir: Path = BACKEND_DIR / ".chroma"
 
+    # Document intelligence (Day 3). All paths are resolved on the server.
+    document_storage_dir: Path = BACKEND_DIR / "data" / "documents"
+    document_collection_name: str = "civicsaathi_government_documents"
+    document_max_upload_bytes: int = 10 * 1024 * 1024
+    document_max_pages: int = 100
+    document_chunk_chars: int = 1200
+    document_chunk_overlap_chars: int = 200
+    document_min_chunk_chars: int = 40
+    document_ocr_min_page_chars: int = 80
+    document_search_top_k: int = 5
+    document_search_max_top_k: int = 20
+    document_search_max_distance: float = 1.0
+    embedding_model_name: str = "intfloat/multilingual-e5-small"
+
     @property
     def allowed_origins(self) -> list[str]:
         """Return normalized CORS origins."""

@@ -39,4 +39,5 @@ async def readiness(request: Request) -> ReadinessResponse:
     return build_readiness(
         settings=get_settings(),
         repository=request.app.state.scheme_repository,
+        document_store=getattr(request.app.state, "document_store", None),
     )

@@ -1,6 +1,6 @@
 # Architecture — CIVICSAATHI AI
 
-**Status:** Day 2.1 complete · **Version:** 0.2.0
+**Status:** Day 3 complete · **Version:** 0.2.0
 **Last updated:** 18 November 2026
 
 This document explains how the system is put together, which boundaries exist
@@ -28,17 +28,37 @@ reference for extending the project without weakening its guarantees.
   Malayalam and Hindi, with loading, empty, error and not-found states.
 - Backend unit/API/boundary tests, Ruff, Oxlint and a production build.
 
+### Built by Day 3
+
+- Secure PDF upload: real-content validation, 10 MB / 100 page caps, rejection
+  of encrypted, corrupt and empty files, safe display names and generated
+  server-side storage names.
+- PyMuPDF text extraction that keeps one passage tied to exactly one page.
+- Page-aware chunking with paragraph boundaries, 1200-character targets,
+  200-character overlap and exact Unicode preservation for Malayalam and Hindi.
+- Lazy `intfloat/multilingual-e5-small` embeddings with `passage: ` / `query: `
+  prefixes, normalized vectors and an injectable fake embedder for tests.
+- Persistent ChromaDB storage with SHA-256 deduplication, reopen safety and
+  deletion scoped to one document.
+- Five document endpoints (upload, list, detail, search, delete) and a live
+  trilingual document library with upload progress, status, details and search
+  results carrying filename and page citations.
+- Explicit no-evidence results and a standing notice that similarity is not
+  proof of factual correctness.
+
 ### Deliberately not built yet
 
 - Supabase persistence. Deferred beyond Day 2; the JSON repository is the
   active provider and the seam for a future database implementation.
-- PDF upload, extraction and vector indexing (Day 3).
 - Gemini answers and citation rendering (Day 4).
+- OCR for image-only PDFs; such files are flagged `needs_ocr` and are not
+  searchable in this release.
 - Voice input and agent workflows.
 - Authentication and user accounts (not required for the hackathon MVP).
 
-The UI labels every unbuilt module with its milestone. Documents and the
-assistant remain honest previews; scheme discovery and eligibility are live.
+The UI labels every unbuilt module with its milestone. Scheme discovery,
+eligibility and document intelligence are live; the assistant remains an honest
+preview.
 
 ---
 
@@ -47,16 +67,20 @@ assistant remain honest previews; scheme discovery and eligibility are live.
 1. **Trust before fluency.** A boring correct answer beats a confident wrong
    one. Eligibility is computed by code. The LLM may explain, never decide.
 2. **Deterministic core, probabilistic periphery.** Rules, retrieval and
-   citation assembly are deterministic. Language generation is the only
-   probabilistic step, and it is constrained by retrieved evidence.
-3. **Honest states.** Empty data is `pending`. Missing credentials are
+   citation assembly are deterministic. Embedding similarity is a ranking
+   signal, not a decision; no language generation happens on Day 3.
+3. **Evidence before answers.** A document result is a real passage with a
+   filename and page number, or an explicit no-evidence result. Nothing is
+   paraphrased into a confident answer.
+4. **Honest states.** Empty data is `pending`. Missing credentials are
    `not_configured`. A failed check is `error`. A missing answer is `unknown`.
    Nothing is silently green and no field is guessed.
-4. **Server-owned secrets.** API keys live only in backend environment
-   variables. `VITE_*` values are public by definition.
-5. **Seam-first data access.** Routes never read JSON directly. A repository
-   boundary keeps the API contract stable if storage changes.
-6. **Progressive disclosure.** The workspace shows what is live, what is a
+5. **Server-owned secrets.** API keys live only in backend environment
+   variables. `VITE_*` values are public by definition, and storage paths never
+   leave the server.
+6. **Seam-first data access.** Routes never read JSON or ChromaDB directly. A
+   repository/store boundary keeps the API contract stable if storage changes.
+7. **Progressive disclosure.** The workspace shows what is live, what is a
    preview and what each preview will require.
 
 ---
@@ -76,21 +100,22 @@ assistant remain honest previews; scheme discovery and eligibility are live.
                                             │                         │
                                             │  health · readiness     │
                                             │  system · schemes       │
-                                            │  eligibility            │
+                                            │  eligibility · documents│
                                             └───────┬─────────┬───────┘
                                                     │         │
                          ┌──────────────────────────┘         └──────────────────┐
                          ▼                                                       ▼
             ┌────────────────────────┐                              ┌────────────────────────┐
-            │ Day 2: JSON repository │                              │ Planned integrations   │
-            │ Supabase (deferred)    │                              │ Gemini · ChromaDB      │
-            │                        │                              │ document extraction    │
+            │ Day 2: JSON repository │                              │ Day 3: document store  │
+            │ Supabase (deferred)    │                              │ PDFs · JSON registry   │
+            │                        │                              │ ChromaDB + e5 vectors  │
             └────────────────────────┘                              └────────────────────────┘
 ```
 
 The browser never talks to a database, Gemini or ChromaDB directly. Every
-privileged operation goes through the API, which keeps credentials and policy
-enforcement on the server.
+privileged operation goes through the API, which keeps credentials, storage
+paths and policy enforcement on the server. Day 4 will add Gemini above the
+same retrieval layer; it is not wired in this release.
 
 ---
 
@@ -101,7 +126,8 @@ enforcement on the server.
 | FastAPI | `backend/` | 8000 | `python -m uvicorn app.main:app --reload` |
 | Vite dev server | `frontend/` | 5173 | `npm run dev` |
 | Curated dataset | `data/sample_schemes/schemes.json` | — | Read once and cached per process |
-| Local vector store | `backend/.chroma` (planned) | — | Created on first ingestion |
+| Document files + registry | `backend/data/documents/` | — | Created on first startup; gitignored |
+| Local vector store | `backend/.chroma` | — | ChromaDB collection; created on first startup |
 
 The frontend defaults to `http://127.0.0.1:8000`. CORS allows
 `http://localhost:5173` and `http://127.0.0.1:5173` in development. Both are
@@ -120,7 +146,7 @@ configurable and must be updated for deployment.
 | `/app/schemes` | `SchemesPage` | Live searchable, filterable catalogue |
 | `/app/schemes/:schemeId` | `SchemeDetailPage` | Live verified scheme record |
 | `/app/eligibility` | `EligibilityPage` | Live optional form and rule-based results |
-| `/app/documents` | `DocumentsPage` | Day 3 preview |
+| `/app/documents` | `DocumentsPage` | Live PDF library, upload and page-cited search |
 | `/app/assistant` | `AssistantPage` | Day 4 preview |
 | `*` | `NotFoundPage` | Route-level 404 |
 
@@ -143,17 +169,21 @@ index.css         design tokens, fonts, motion policy
 
 There is still no global store. Catalogue state is local to `SchemesPage`;
 detail state is local to `SchemeDetailPage`; eligibility answers and results are
-local to `EligibilityPage`. This keeps sensitive eligibility answers out of
-shared application state.
+local to `EligibilityPage`; document library, upload, detail and search state is
+local to `DocumentsPage`. This keeps sensitive eligibility answers out of shared
+application state.
 
 ### 5.3 API boundary
 
 `services/api.js` wraps Axios and exposes `getHealth`, `getReadiness`,
-`getSystemInfo`, `getSchemes`, `getScheme` and `checkEligibility`.
+`getSystemInfo`, `getSchemes`, `getScheme`, `checkEligibility`, `listDocuments`,
+`getDocument`, `uploadDocument`, `deleteDocument` and `searchDocuments`.
 
-- Every list/detail request carries the current interface language.
+- Every scheme list/detail request carries the current interface language.
 - Empty and undefined query parameters are dropped before the request.
-- Search requests are debounced by 350 ms and aborted when replaced.
+- Scheme search requests are debounced by 350 ms and aborted when replaced;
+  document search is an explicit submit action.
+- Upload requests use `FormData` and report axios upload progress.
 - `toApiError` normalizes network, timeout, cancellation, 404, validation and
   server errors into one `ApiError` shape with a readable message.
 - Cancellation is explicitly ignored by pages so an aborted request does not
@@ -183,8 +213,16 @@ per-condition pass/fail/unknown explanations, per-route combination status,
 sources, verification dates and the preliminary-result disclaimer. The page
 re-runs the check when the interface language changes.
 
-Documents and the assistant are still previews and are labelled as such in the
-sidebar, dashboard and landing page.
+**Documents.** Live library with upload (drag-and-drop or picker, progress bar,
+multi-file support), per-document status and passage counts, detail view
+(checksum and PDF metadata), deletion with confirmation, and multilingual
+search with an optional document filter. Results show the real passage,
+filename, page number and similarity, plus a verification notice. Empty,
+loading, upload-error and no-evidence states are explicit. No fake documents or
+answers are seeded.
+
+The assistant is still a preview and is labelled as such in the sidebar,
+dashboard and landing page. Document intelligence is marked live.
 
 ### 5.5 Snapshot flow
 
@@ -218,6 +256,12 @@ AppShell
 | Scheme id not found | Dedicated 404 state with a route back to the catalogue |
 | Invalid eligibility answer | Inline field error and focus on the first invalid field |
 | Eligibility request failure | Error notice with retry, no result retained as current |
+| Document library load failure | Error notice with retry; no fake documents shown |
+| Invalid or oversized PDF | Clear upload error with the server's reason; no document created |
+| Duplicate PDF | Existing record returned with a duplicate notice; no extra vectors |
+| Scanned/low-text PDF | Stored as `needs_ocr` and excluded from search with an honest message |
+| Document search with no match | Empty state with `no relevant evidence` message |
+| Document deletion | Confirmation step, then scoped delete and refreshed library |
 | Partial health snapshot | Last good snapshot retained, marked with its last-checked time |
 | Unknown route | 404 page with a route back to the workspace |
 
@@ -248,6 +292,7 @@ app/routes/health.py        GET /health, GET /health/readiness
 app/routes/system.py        GET /system/info
 app/routes/schemes.py       GET /schemes, GET /schemes/{id}
 app/routes/eligibility.py   POST /eligibility/check
+app/routes/documents.py     Upload, list, detail, search, delete PDF endpoints
 app/services/system_service.py
                             Health, readiness, feature registry, disclaimer
 app/services/scheme_service.py
@@ -256,35 +301,49 @@ app/services/eligibility_engine.py
                             Three-valued DNF evaluator, pure functions
 app/services/eligibility_service.py
                             In-memory evaluation over all schemes
+app/services/pdf_extractor.py
+                            Secure PDF validation, PyMuPDF text per page
+app/services/chunker.py     Page-aware overlapping chunker, Unicode-safe
+app/services/embeddings.py  Lazy multilingual-e5 provider, e5 prefixes
+app/services/document_service.py
+                            Ingestion, retrieval, dedup and deletion orchestration
 app/database/scheme_repository.py
                             Validated read-only dataset adapter, search
+app/database/document_store.py
+                            JSON registry + persistent ChromaDB collection
 app/models/schemes.py       Dataset, API and eligibility contracts
 app/models/schemas.py       Health, readiness and system contracts
+app/models/documents.py     Document upload/list/search/delete contracts
 ```
 
 ### 6.2 Request lifecycle
 
 1. Uvicorn starts the app and runs the lifespan hook.
-2. The hook stores `started_at` and a `SchemeRepository` instance on
-   `app.state`.
+2. The hook stores `started_at`, a `SchemeRepository`, a `DocumentStore` and a
+   `DocumentService` on `app.state`.
 3. A request enters a thin route handler.
-4. The handler calls a service function with repository state and validated
-   query/request parameters.
+4. The handler calls a service function with repository/store state and validated
+   query/request parameters. Document work (parsing, embedding, vector I/O) is
+   offloaded with `run_in_threadpool` so the event loop stays responsive.
 5. Pydantic validates and serializes the response model.
-6. Dataset failures return a 503 `dataset_unavailable` envelope. Unexpected
-   exceptions are logged by the global handler and returned as a generic 500
-   envelope without internal details.
+6. Dataset failures return a 503 `dataset_unavailable` envelope; invalid uploads
+   return a safe 400/413 envelope; document operation failures return 404 or
+   500 with a `code`. Unexpected exceptions are logged by the global handler and
+   returned as a generic 500 envelope without internal details.
 
 The repository validates the whole dataset with Pydantic on first load and
 caches it. A malformed record is a deployment error, not something the API
-patches at request time.
+patches at request time. The document store reopens the JSON registry and the
+Chroma collection on startup; both survive restarts.
 
 ### 6.3 Why lifespan state
 
-The repository and start time are process-scoped, not request-scoped. Creating
-them once in the lifespan hook avoids repeated file I/O, makes health uptime
-accurate, and gives tests a controlled startup/shutdown boundary through
-`TestClient` as a context manager.
+The repository, document store/service and start time are process-scoped, not
+request-scoped. Creating them once in the lifespan hook avoids repeated file I/O
+and ChromaDB client creation, makes health uptime accurate, and gives tests a
+controlled startup/shutdown boundary through `TestClient` as a context manager.
+Document API tests replace `app.state.document_service` with a store backed by a
+temporary directory and a fake embedder, then restore the original state.
 
 ### 6.4 Configuration
 
@@ -292,6 +351,13 @@ accurate, and gives tests a controlled startup/shutdown boundary through
 with `lru_cache`. It exposes normalized CORS origins, the dataset path and
 boolean helpers (`gemini_configured`, `supabase_configured`). Secrets use
 `SecretStr` and are never included in responses or logs.
+
+Day 3 settings are server-side only: `document_storage_dir`,
+`chroma_persist_dir`, `document_collection_name`, upload/size/page limits,
+chunk size/overlap/minimum, the OCR text-density hint, search defaults and
+bounds, and `embedding_model_name` (default
+`intfloat/multilingual-e5-small`). Storage paths are never returned by an API.
+The full list with defaults is in [`backend/README.md`](../backend/README.md).
 
 ### 6.5 Error contract
 
@@ -301,7 +367,19 @@ Dataset unavailable:
 { "detail": "Curated dataset file is missing.", "code": "dataset_unavailable" }
 ```
 
-Unhandled exceptions return HTTP 500:
+Rejected uploads and document operations use the same `{ detail, code }`
+envelope with a safe, human-readable detail:
+
+```json
+{ "detail": "Encrypted PDFs are not supported. Remove the password and retry.", "code": "encrypted_pdf" }
+```
+
+```json
+{ "detail": "The requested document was not found.", "code": "document_not_found" }
+```
+
+Validation failures return `422 validation_error`; oversized uploads return
+`413 file_too_large`. Unhandled exceptions return HTTP 500:
 
 ```json
 {
@@ -328,9 +406,16 @@ message. Known 4xx responses keep FastAPI's `detail` string when present.
 | `GET` | `/api/v1/schemes` | Search, filter and paginate the catalogue |
 | `GET` | `/api/v1/schemes/{id}` | Read one full verified record |
 | `POST` | `/api/v1/eligibility/check` | Evaluate all schemes in memory |
+| `POST` | `/api/v1/documents/upload` | Validate, store and index a PDF |
+| `GET` | `/api/v1/documents` | List documents with status and passage counts |
+| `POST` | `/api/v1/documents/search` | Retrieve page-cited passages |
+| `GET` | `/api/v1/documents/{document_id}` | Read document metadata |
+| `DELETE` | `/api/v1/documents/{document_id}` | Delete one document and its vectors |
 
 `/health` remains cheap and independent of external services so a platform
-liveness probe reflects the process, not a third party.
+liveness probe reflects the process, not a third party. Document routes accept
+only server-generated ids matching `[A-Za-z0-9_-]+`, so traversal attempts are
+rejected at validation before any path is built.
 
 ### 7.2 `GET /api/v1/schemes`
 
@@ -390,10 +475,10 @@ Each check has one of four states:
 
 | State | Meaning | Example |
 | --- | --- | --- |
-| `ok` | Verified and usable | API responding; 15 schemes loaded |
-| `pending` | Planned, not built yet | ChromaDB before Day 3 |
-| `not_configured` | Required credentials absent | Supabase URL/key empty |
-| `error` | Expected to work but failed | Dataset file missing or invalid |
+| `ok` | Verified and usable | API responding; 15 schemes loaded; ChromaDB collection open |
+| `pending` | Planned, not built yet | Assistant (Day 4) |
+| `not_configured` | Required credentials absent | Supabase URL/key or Gemini key empty |
+| `error` | Expected to work but failed | Dataset file missing or invalid; ChromaDB unopenable |
 
 Aggregation:
 
@@ -403,24 +488,49 @@ all checks == "ok"          → overall "ready"
 anything else               → overall "degraded"
 ```
 
-On Day 2 the expected result is `degraded`:
+On Day 3 the expected result is still `degraded`:
 
 - API is `ok`.
 - `scheme_dataset` is `ok` with 15 curated schemes.
+- `vector_store` is `ok` with the live passage count from the Chroma collection.
 - Supabase is `not_configured`, or `pending` with a note that integration is
   deferred if credentials happen to be present.
 - Gemini is `not_configured` or `pending` until Day 4.
-- ChromaDB is `pending` until Day 3.
+- The assistant feature is `pending` until Day 4.
 
 This is intentionally visible in the dashboard. A green dashboard before the
-document and assistant milestones would be a lie.
+assistant milestone would be a lie.
 
-### 7.6 Not implemented
+### 7.6 Document endpoints in detail
+
+**Upload.** `POST /api/v1/documents/upload` takes `multipart/form-data` with one
+`file`. The body is capped at `DOCUMENT_MAX_UPLOAD_BYTES + 1` bytes before
+extraction. A real PDF header and a successful PyMuPDF open are required; empty,
+encrypted, corrupt and over-page files are rejected with a safe `code`. A new
+document returns `201`; identical content (SHA-256 checksum) returns `200` with
+`duplicate: true` and the existing record, creating no new vectors. The response
+never includes a storage path.
+
+**List / detail.** `GET /api/v1/documents` returns summaries (id, safe filename,
+status, page/chunk counts, size, upload time). `GET /api/v1/documents/{id}`
+adds checksum, text-character count, OCR flag and sanitized PDF metadata. The
+id is validated against `[A-Za-z0-9_-]+`.
+
+**Search.** `POST /api/v1/documents/search` accepts `query` (1–1000 non-blank
+characters), optional `top_k` (clamped to `1..DOCUMENT_SEARCH_MAX_TOP_K`) and an
+optional `document_id` filter. Results are real passages with `page_number`,
+`chunk_index`, `original_filename`, `text`, `distance` and `similarity`. No
+match returns `200` with `has_evidence: false`, an empty `results` list and an
+explicit no-evidence message. Every response carries `similarity_notice`.
+
+**Delete.** `DELETE /api/v1/documents/{id}` deletes only that document's
+vectors (Chroma `where` filter), its registry record and its stored PDF;
+unrelated documents are untouched.
+
+### 7.7 Not implemented
 
 | Method | Path | Milestone |
 | --- | --- | --- |
-| `POST` | `/api/v1/documents` | Day 3 |
-| `GET` | `/api/v1/documents/{id}` | Day 3 |
 | `POST` | `/api/v1/assistant/query` | Day 4 |
 
 ---
@@ -501,6 +611,24 @@ A blanket `.gov.in` / `.nic.in` suffix rule was rejected because:
 - Earlier planning notes promised Supabase on Day 2. That promise was
   incorrect: Day 2 prioritised verified content and a tested rules engine, and
   Supabase is now explicitly deferred.
+
+### 8.5 Document storage
+
+Two stores back the Day 3 pipeline, both under server-controlled directories:
+
+- `backend/data/documents/` holds each uploaded PDF under a generated
+  `uuid4().hex` filename plus an atomically written `index.json` registry of
+  `DocumentDetail` records. The registry is validated by Pydantic on read and
+  reloaded on every operation, so a restart never trusts an unchecked file.
+- `backend/.chroma/` holds the persistent `civicsaathi_government_documents`
+  collection with cosine distance. Vectors are upserted by
+  `{document_id}:{chunk_index}` ids, so re-indexing a document is idempotent.
+  Each vector carries `document_id`, `original_filename`, `page_number` and
+  `chunk_index` in its metadata.
+
+The registry owns document-level facts (status, checksum, counts); Chroma owns
+passage-level similarity. Deletion is scoped by `document_id` in both stores.
+Storage directories are gitignored, and no API response exposes them.
 
 ---
 
@@ -596,26 +724,111 @@ in code. This is the core trust boundary of the product.
 
 ---
 
-## 10. Security and privacy
+## 10. Document intelligence
 
-| Concern | Day 2 control | Planned control |
+### 10.1 Ingestion pipeline
+
+```text
+UploadFile (capped read)
+   │
+   ▼
+extract_document()          bytes only; no user path; %PDF- header + PyMuPDF open
+   │  rejects empty / oversized / encrypted / corrupt / >100 pages
+   ▼
+ExtractedDocument           one ExtractedPage per PDF page + SHA-256 checksum
+   │
+   ▼
+chunk_pages()               paragraphs/sentences → ≤1200 chars, 200 overlap,
+   │                        tiny fragments merged, page number attached
+   ▼
+EmbeddingService            "passage: " + text → normalized multilingual-e5 vector
+   │
+   ▼
+VectorStore.add_document_chunks()
+   │                        ChromaDB upsert by {document_id}:{chunk_index}
+   ▼
+DocumentRegistry.add()      atomic JSON write, status indexed / needs_ocr / empty
+```
+
+If any step after the PDF is written fails, vectors and the file are rolled back
+so no orphaned record is left. A duplicate checksum short-circuits before any
+work and returns the existing record.
+
+### 10.2 Chunking rules
+
+- A chunk never spans two pages; its `page_number` is therefore unambiguous.
+- Boundaries prefer blank lines, then sentences (including `।` and `॥`), then
+  words; only a single overlong token is hard-split into overlapping windows.
+- Overlap is the tail of the previous chunk on the *same* page, so a passage
+  always cites the page its text came from.
+- Empty and whitespace pages produce no chunks; a tiny trailing fragment is
+  merged into its predecessor instead of becoming a near-empty vector.
+- Malayalam and Hindi code points pass through unchanged — no transliteration,
+  NFKC folding or ASCII encoding.
+
+### 10.3 Embeddings
+
+`intfloat/multilingual-e5-small` is loaded lazily on first use, once per process.
+Passages are prefixed `passage: `, queries `query: `, and vectors are L2
+normalized, following the model's published contract. An `EmbeddingProvider`
+protocol makes the store agnostic to the model: unit tests inject a
+deterministic `FakeEmbedder` that maps English/Malayalam/Hindi concepts to the
+same vector and unrelated words to an opposing vector, while a gated integration
+test uses the real model to prove cross-language retrieval.
+
+### 10.4 Retrieval semantics
+
+A query embedding is compared with cosine distance. Results above
+`DOCUMENT_SEARCH_MAX_DISTANCE` (default 1.0) are dropped. What remains is
+returned as real passages, never generated text; each carries the filename and
+page. If nothing survives, `has_evidence` is `false` and the message says so
+explicitly. The standing `similarity_notice` states that similarity is not proof
+of factual correctness.
+
+### 10.5 Security controls
+
+| Concern | Control |
+| --- | --- |
+| Fake PDFs | `%PDF-` header check plus a real PyMuPDF open; corrupt files rejected |
+| Oversized files | Byte cap applied while reading, before extraction |
+| Encrypted PDFs | Rejected unless the password is removed by the uploader |
+| Path traversal | Client filename is display-only; storage name is a generated UUID; ids validated |
+| PDF scripts / external resources | Never executed, downloaded or followed; text-only extraction |
+| Unrelated deletion | Chroma delete and registry delete are both scoped to one id |
+| Path leakage | API models contain no storage fields; responses are derived from contracts |
+
+### 10.6 Limitations
+
+Image-only PDFs are flagged `needs_ocr` and produce no passages. Extraction
+quality depends on the PDF's embedded text layer. Embedding similarity ranks by
+topic, not truth. ChromaDB is a single-node local store and needs a persistent
+volume or a managed replacement when deployed. No generated answers, OCR,
+Gemini, voice or agents exist in this milestone.
+
+---
+
+## 11. Security and privacy
+
+| Concern | Control through Day 3 | Planned control |
 | --- | --- | --- |
-| API keys | Server-side `.env`, `SecretStr`, gitignored | Same; rotate keys before demo |
+| API keys | Server-side `.env`, `SecretStr`, gitignored | Rotate keys before demo |
 | Browser bundle | Only `VITE_API_BASE_URL` | Never add secrets to `VITE_*` |
 | CORS | Explicit development origins | Production frontend origin only |
 | Dataset sources | HTTPS + reviewed allowlist + rationale | Review on every new domain |
 | Eligibility PII | Allowlisted fields, in-memory only, no body logging | Document retention policy before any persistence |
-| Response leakage | Field names only, never values | Same |
-| Uploads | None | Type/size limits, safe filenames, no public bucket (Day 3) |
-| Errors | Generic 500 envelope, 503 for dataset errors | Add request IDs and rate limits |
+| Response leakage | Field names only, never values; no storage paths | Same |
+| Uploads | Content validation, 10 MB / 100 page caps, encrypted/corrupt rejected, generated storage names, no script execution | Retention policy and virus scanning for production |
+| Vector isolation | Chroma deletes scoped by `document_id` | Same |
+| Errors | Generic 500 envelope, 503 for dataset errors, safe codes for uploads | Add request IDs and rate limits |
 | Auth | None (public demo) | Out of scope for MVP; note in demo |
 
 The workspace remains a public demo. It does not create accounts and does not
-store eligibility profiles.
+store eligibility profiles. Uploaded PDFs are stored on the server, not in a
+public bucket, and are never used to train a model.
 
 ---
 
-## 11. Reliability and failure modes
+## 12. Reliability and failure modes
 
 | Failure | Detection | Behaviour |
 | --- | --- | --- |
@@ -628,19 +841,26 @@ store eligibility profiles.
 | Empty search | Zero matches | Normal 200, empty state with reset action |
 | Invalid eligibility input | Local validation | Inline error, focus on first invalid field |
 | Eligibility API error | Axios error | Error notice with retry; no fabricated result |
+| Invalid or oversized PDF | Extractor validation | 400/413 with safe `code`; no record or file created |
+| Encrypted / corrupt PDF | PyMuPDF open check | 400 with a clear reason; no partial index |
+| Duplicate PDF | SHA-256 lookup | 200 `duplicate: true`, existing record, no new vectors |
+| Scanned / low-text PDF | Text-density check | Stored `needs_ocr`, not searchable, honest status |
+| Ingestion failure mid-write | Exception in service | Vectors and file rolled back; no orphaned record |
+| Document search with no match | Distance filter | Explicit no-evidence response, empty result list |
+| Chroma unavailable | Store status | Readiness `error`; document operations return a safe 500 |
 | Missing Gemini key | Settings check | Readiness `not_configured`, AI features disabled |
 | Missing Supabase key | Settings check | `not_configured`, JSON provider remains active |
-| Chroma not built | Static check | `pending` until ingestion exists |
 | Unhandled exception | Global handler | Logged with traceback, generic 500 to client |
 | Stale poll response | Request ID | Discarded |
 | Background tab | Visibility API | Polling paused, immediate refresh on return |
 
 ---
 
-## 12. Testing strategy
+## 13. Testing strategy
 
 Backend tests use `TestClient` with the lifespan context and run against the
-real curated dataset.
+real curated dataset. Document unit tests use an injectable `FakeEmbedder` and
+tiny in-memory PDFs, so they need no model download or network.
 
 | File | Coverage |
 | --- | --- |
@@ -649,28 +869,43 @@ real curated dataset.
 | `tests/test_source_policy.py` | HTTPS, credentials, ports, allowlist and subdomains |
 | `tests/test_schemes_api.py` | List/search/filter/pagination, detail, 404, localisation |
 | `tests/test_eligibility.py` | Operators, boundaries, outcomes, manual review, privacy |
+| `tests/test_pdf_extractor.py` | Fake/empty/oversized/encrypted/corrupt PDFs, safe filenames, OCR flag |
+| `tests/test_chunker.py` | Page provenance, overlap, paragraph boundaries, tiny/empty pages, Unicode |
+| `tests/test_embeddings.py` | `passage:`/`query:` prefixes and normalization with a recording model |
+| `tests/test_document_store.py` | Insert, search, filter, delete, reopen persistence, dedup, unsafe ids |
+| `tests/test_document_service.py` | Ingestion, duplicate handling, EN/ML/HI retrieval, no-evidence, scoped delete |
+| `tests/test_documents_api.py` | All six document endpoints, validation errors and response contracts |
+| `tests/integration/test_documents_integration.py` | Gated real-model cross-language retrieval |
+
+Result: **190 passed, 1 skipped** in the default run (the gated real-model test).
+With `CIVICSAATHI_RUN_MODEL_TESTS=1`, the integration test also passes using
+`intfloat/multilingual-e5-small` from the local Hugging Face cache.
 
 Also enforced:
 
 - Ruff lint and format check for all backend code.
 - Oxlint for the frontend.
 - Vite production build, which catches import and bundling errors.
-- Catalog key parity: EN, ML and HI contain the same 572 flattened keys.
-- Manual browser verification at 1440 px and 390 px, including empty search,
-  invalid id, offline API and Malayalam/Hindi switching.
+- Catalog key parity: EN, ML and HI contain identical flattened key sets
+  (verified by a script; the count changes as copy is added).
+- Manual browser verification at 1440 px and 390 px for the Day 2 shell,
+  including empty search, invalid id, offline API and language switching. The
+  Day 3 document UI is covered by API tests and a production build but has not
+  yet been manually exercised in a browser.
 
 ---
 
-## 13. Deployment topology (planned)
+## 14. Deployment topology (planned)
 
 ```text
 GitHub
   ├── Vercel  ← frontend/  (static build, SPA routing)
   └── Render  ← backend/   (Python 3.12, uvicorn)
                      │
+                     ├── schemes.json (validated repository)
+                     ├── documents/ + .chroma (mounted persistent disk)
                      ├── Supabase PostgreSQL (deferred)
-                     ├── ChromaDB persistent disk (or managed vector store)
-                     └── Google Gemini API
+                     └── Google Gemini API (Day 4)
 ```
 
 Configuration requirements:
@@ -679,14 +914,17 @@ Configuration requirements:
 - `CORS_ORIGINS` contains only the deployed frontend origin.
 - `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` are Render environment
   secrets, never repository variables.
-- Chroma persistence must use a mounted disk on Render, or be replaced with a
-  managed vector store if the instance is ephemeral.
+- `CHROMA_PERSIST_DIR` and `DOCUMENT_STORAGE_DIR` must use a mounted disk on
+  Render, or be replaced with a managed vector/object store if the instance is
+  ephemeral.
+- The embedding model is downloaded on first use; allow network access and disk
+  at build/first-boot time, or pre-warm the Hugging Face cache.
 - Health checks should target `/api/v1/health`; readiness is for dashboards and
   operators, not platform restarts.
 
 ---
 
-## 14. Decision log
+## 15. Decision log
 
 | Decision | Why | Trade-off |
 | --- | --- | --- |
@@ -700,25 +938,31 @@ Configuration requirements:
 | `potentially_eligible`, never `eligible` | Avoids overstating a preliminary result | Slightly more cautious wording |
 | English verified, ML/HI editorial | No false claim of official translation | Translation quality must be reviewed separately |
 | Health and readiness split | Liveness must not depend on third parties | Two endpoints to maintain |
-| Evidence-first RAG (planned) | Citations are the product differentiator | More ingestion work, stricter prompts |
-| Secrets only on the server | Browser bundles are public | All privileged calls go through the API |
+| Evidence-first RAG (planned for Day 4) | Citations are the product differentiator | No generated answers in Day 3 |
+| Multilingual-e5-small | EN/ML/HI retrieval without an LLM call; runs locally after download | Model download and CPU time on first use |
+| `passage:` / `query:` prefixes + normalization | Follows the model's published contract | Text must be prefixed consistently |
+| Page-scoped chunks | A citation must never point at the wrong page | No cross-page context in a single passage |
+| JSON registry + Chroma, not Supabase | Reproducible local persistence without credentials | Manual migration if a database lands later |
+| Checksum dedup + scoped delete | No duplicate vectors; deleting one PDF leaves others intact | Identical bytes cannot be indexed twice |
+| Secrets and paths only on the server | Browser bundles are public | All privileged calls go through the API |
 | 30 s polling instead of websockets | Simple, adequate for an operations dashboard | Slight staleness; acceptable |
 | No global state library | Keeps eligibility answers out of shared state | Revisit only if cross-page state grows |
 
 ---
 
-## 15. Day 3 extension points
+## 16. Day 4 extension points
 
-Start here when Day 2 is approved:
+Start here when Day 3 is approved:
 
-1. Add PDF upload with type and size limits, safe filenames and explicit
-   failure states.
-2. Extract text and page metadata, then chunk with overlap and character
-   offsets.
-3. Index chunks with `document_id`, file name and page number preserved.
-4. Expose document metadata and ingestion status endpoints.
-5. Add retrieval evaluation with expected pages before building generation.
-6. Keep eligibility and scheme lookup out of the document pipeline.
+1. Inject the existing retrieval results into a Gemini prompt; do not let the
+   model invent facts outside the retrieved passages.
+2. Render file and page citations beside every generated sentence, and keep the
+   explicit no-evidence response when retrieval returns nothing.
+3. Localize the assistant flow in English, Malayalam and Hindi using the same
+   key-parity discipline as the rest of the UI.
+4. Add retrieval/generation evaluation sets with expected pages before changing
+   chunking or model settings.
+5. Keep eligibility and scheme lookup out of the document pipeline.
 
 Do not add Gemini to the eligibility path. The LLM can explain a completed
 evaluation, but the decision must remain code-owned and reproducible.
