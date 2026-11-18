@@ -68,7 +68,7 @@ def test_empty_profile_returns_an_honest_result_for_every_scheme(
 
 
 def test_pm_jay_age_70_route_is_potentially_eligible(client: TestClient) -> None:
-    body = check(client, age=72)
+    body = check(client, age=72, indian_citizen=True)
     result = result_for(body, "pm-jay")
 
     assert result["outcome"] == "potentially_eligible"
@@ -76,19 +76,33 @@ def test_pm_jay_age_70_route_is_potentially_eligible(client: TestClient) -> None
     assert result["outcome_message"].startswith("You meet every encoded condition")
     assert result["disclaimer"]
     assert condition_statuses(result)["age_70_or_above"] == "pass"
+    assert condition_statuses(result)["indian_citizen"] == "pass"
 
 
 def test_pm_jay_age_70_boundary_is_inclusive(client: TestClient) -> None:
-    assert result_for(check(client, age=70), "pm-jay")["outcome"] == (
-        "potentially_eligible"
+    assert result_for(check(client, age=70, indian_citizen=True), "pm-jay")[
+        "outcome"
+    ] == ("potentially_eligible")
+    assert result_for(check(client, age=69, indian_citizen=True), "pm-jay")[
+        "outcome"
+    ] == ("manual_review")
+
+
+def test_pm_jay_requires_indian_citizenship(client: TestClient) -> None:
+    non_citizen = result_for(check(client, age=72, indian_citizen=False), "pm-jay")
+    assert non_citizen["outcome"] == "ineligible"
+    assert condition_statuses(non_citizen)["indian_citizen"] == "fail"
+
+    non_citizen_below_70 = result_for(
+        check(client, age=69, indian_citizen=False), "pm-jay"
     )
-    assert result_for(check(client, age=69), "pm-jay")["outcome"] == ("manual_review")
+    assert non_citizen_below_70["outcome"] == "ineligible"
 
 
 def test_pm_jay_below_70_needs_the_manual_secc_route(
     client: TestClient,
 ) -> None:
-    result = result_for(check(client, age=69), "pm-jay")
+    result = result_for(check(client, age=69, indian_citizen=True), "pm-jay")
 
     assert result["outcome"] == "manual_review"
     secc = next(
@@ -111,6 +125,8 @@ def test_pm_kisan_complete_match_is_potentially_eligible(
             institutional_landholder=False,
             income_tax_payer=False,
             government_employee=False,
+            excluded_government_job=False,
+            constitutional_post_holder=False,
             registered_professional=False,
             monthly_pension=0,
         ),
@@ -129,14 +145,19 @@ def test_pm_kisan_pension_boundary(client: TestClient) -> None:
         "institutional_landholder": False,
         "income_tax_payer": False,
         "government_employee": False,
+        "excluded_government_job": False,
+        "constitutional_post_holder": False,
         "registered_professional": False,
     }
 
+    below_limit = result_for(check(client, **base, monthly_pension=9_999), "pm-kisan")
     at_limit = result_for(check(client, **base, monthly_pension=10_000), "pm-kisan")
     above_limit = result_for(check(client, **base, monthly_pension=10_001), "pm-kisan")
 
-    assert at_limit["outcome"] == "potentially_eligible"
+    assert below_limit["outcome"] == "potentially_eligible"
+    assert at_limit["outcome"] == "ineligible"
     assert above_limit["outcome"] == "ineligible"
+    assert condition_statuses(at_limit)["monthly_pension_below_10000"] == "fail"
     assert condition_statuses(above_limit)["monthly_pension_below_10000"] == "fail"
 
 
@@ -145,7 +166,8 @@ def test_pm_kisan_pension_boundary(client: TestClient) -> None:
     [
         {"institutional_landholder": True},
         {"income_tax_payer": True},
-        {"government_employee": True},
+        {"excluded_government_job": True},
+        {"constitutional_post_holder": True},
         {"registered_professional": True},
     ],
 )
@@ -157,6 +179,8 @@ def test_pm_kisan_exclusion_conditions_make_the_scheme_ineligible(
         "institutional_landholder": False,
         "income_tax_payer": False,
         "government_employee": False,
+        "excluded_government_job": False,
+        "constitutional_post_holder": False,
         "registered_professional": False,
         "monthly_pension": 0,
         **overrides,
@@ -188,7 +212,7 @@ def test_apy_age_and_enrolment_boundaries(client: TestClient) -> None:
     base = {
         "indian_citizen": True,
         "bank_account": True,
-        "income_tax_payer": False,
+        "ever_income_tax_payer": False,
         "duplicate_enrolment": False,
     }
 
@@ -217,15 +241,24 @@ def test_apy_age_and_enrolment_boundaries(client: TestClient) -> None:
     tax_payer = result_for(
         check(
             client,
+            **{**base, "ever_income_tax_payer": True},
             age=30,
-            indian_citizen=True,
-            bank_account=True,
-            income_tax_payer=True,
-            duplicate_enrolment=False,
         ),
         "atal-pension-yojana",
     )
     assert tax_payer["outcome"] == "ineligible"
+    assert condition_statuses(tax_payer)["never_income_tax_payer"] == "fail"
+
+    last_year_only = result_for(
+        check(
+            client,
+            **base,
+            age=30,
+            income_tax_payer=True,
+        ),
+        "atal-pension-yojana",
+    )
+    assert last_year_only["outcome"] == "potentially_eligible"
 
 
 @pytest.mark.parametrize(
@@ -327,32 +360,45 @@ def test_snehapoorvam_bpl_and_apl_routes(client: TestClient) -> None:
     )
     assert (
         result_for(
-            check(client, **base, bpl=False, area="rural", annual_income=20_000),
+            check(client, **base, bpl=False, area="rural", annual_income=19_999),
             "snehapoorvam",
         )["outcome"]
         == "potentially_eligible"
     )
     assert (
         result_for(
-            check(client, **base, bpl=False, area="rural", annual_income=20_001),
+            check(client, **base, bpl=False, area="rural", annual_income=20_000),
             "snehapoorvam",
         )["outcome"]
         == "ineligible"
+    )
+    assert (
+        result_for(
+            check(client, **base, bpl=False, area="urban", annual_income=22_374),
+            "snehapoorvam",
+        )["outcome"]
+        == "potentially_eligible"
     )
     assert (
         result_for(
             check(client, **base, bpl=False, area="urban", annual_income=22_375),
             "snehapoorvam",
         )["outcome"]
-        == "potentially_eligible"
-    )
-    assert (
-        result_for(
-            check(client, **base, bpl=False, area="urban", annual_income=22_376),
-            "snehapoorvam",
-        )["outcome"]
         == "ineligible"
     )
+
+
+def test_snehapoorvam_covers_degree_and_professional_students(
+    client: TestClient,
+) -> None:
+    profile = {
+        "lost_parent": True,
+        "education_level": "degree_or_professional",
+        "bpl": True,
+    }
+    result = result_for(check(client, **profile), "snehapoorvam")
+    assert result["outcome"] == "potentially_eligible"
+    assert condition_statuses(result)["student_up_to_degree"] == "pass"
 
 
 def test_snehapoorvam_has_three_alternative_routes(client: TestClient) -> None:
@@ -374,7 +420,7 @@ def test_snehapoorvam_education_level_is_mandatory(client: TestClient) -> None:
         "snehapoorvam",
     )
     assert result["outcome"] == "ineligible"
-    assert condition_statuses(result)["school_or_preschool"] == "fail"
+    assert condition_statuses(result)["student_up_to_degree"] == "fail"
 
 
 def test_samaswasam_alternative_routes(client: TestClient) -> None:
@@ -389,11 +435,25 @@ def test_samaswasam_alternative_routes(client: TestClient) -> None:
         check(
             client,
             transplant_patient=True,
+            years_since_transplant=5,
             annual_income=99_999,
         ),
         "samaswasam",
     )
     assert transplant["outcome"] == "potentially_eligible"
+
+    outside_window = result_for(
+        check(
+            client,
+            transplant_patient=True,
+            years_since_transplant=6,
+            annual_income=99_999,
+        ),
+        "samaswasam",
+    )
+    assert condition_statuses(outside_window)["transplant_within_5_years"] == "fail"
+    assert outside_window["outcome"] in {"ineligible", "insufficient_information"}
+    assert outside_window["outcome"] != "potentially_eligible"
 
     ineligible = result_for(
         check(
@@ -418,11 +478,12 @@ def test_samaswasam_alternative_routes(client: TestClient) -> None:
             "pm-svanidhi",
             {
                 "street_vendor": True,
-                "area": "urban",
-                "similar_loan_unrepaid": False,
+                "age": 30,
+                "unique_upi_id": True,
+                "loan_npa_or_written_off": False,
             },
         ),
-        ("pmay-urban", {"area": "urban"}),
+        ("pmay-urban", {"area": "urban", "annual_income": 900_000}),
         ("kasp", {"state": "Kerala"}),
         ("vayomithram", {"state": "Kerala", "age": 70}),
         ("snehasanthwanam", {}),
@@ -451,11 +512,13 @@ def test_unencodable_official_condition_forces_manual_review(
             "pm-svanidhi",
             {
                 "street_vendor": False,
-                "area": "urban",
-                "similar_loan_unrepaid": False,
+                "age": 30,
+                "unique_upi_id": True,
+                "loan_npa_or_written_off": False,
             },
         ),
         ("pmay-urban", {"area": "rural"}),
+        ("pmay-urban", {"area": "urban", "annual_income": 900_001}),
         ("kasp", {"state": "Tamil Nadu"}),
         ("vayomithram", {"state": "Kerala", "age": 60}),
     ],
@@ -466,8 +529,57 @@ def test_a_failed_condition_beats_manual_review(
     assert result_for(check(client, **profile), scheme_id)["outcome"] == ("ineligible")
 
 
+def test_pm_svanidhi_profile_boundaries(client: TestClient) -> None:
+    base = {
+        "street_vendor": True,
+        "unique_upi_id": True,
+        "loan_npa_or_written_off": False,
+    }
+
+    at_18 = result_for(check(client, **base, age=18), "pm-svanidhi")
+    assert at_18["outcome"] == "manual_review"
+    assert condition_statuses(at_18)["age_18_or_above"] == "pass"
+
+    below_18 = result_for(check(client, **base, age=17), "pm-svanidhi")
+    assert below_18["outcome"] == "ineligible"
+    assert condition_statuses(below_18)["age_18_or_above"] == "fail"
+
+    no_upi = result_for(
+        check(client, **{**base, "unique_upi_id": False}, age=30),
+        "pm-svanidhi",
+    )
+    assert no_upi["outcome"] == "ineligible"
+    assert condition_statuses(no_upi)["svanidhi_unique_upi_id"] == "fail"
+
+    npa = result_for(
+        check(client, **{**base, "loan_npa_or_written_off": True}, age=30),
+        "pm-svanidhi",
+    )
+    assert npa["outcome"] == "ineligible"
+    assert condition_statuses(npa)["no_loan_npa_or_written_off"] == "fail"
+
+
+def test_pmay_urban_2_income_band_and_manual_conditions(client: TestClient) -> None:
+    at_limit = result_for(
+        check(client, area="urban", annual_income=900_000), "pmay-urban"
+    )
+    assert at_limit["outcome"] == "manual_review"
+    statuses = condition_statuses(at_limit)
+    assert statuses["annual_income_up_to_900000"] == "pass"
+    assert statuses["manual_pmay_no_pucca_house"] == "unknown"
+    assert statuses["manual_pmay_no_allotment_20_years"] == "unknown"
+    assert statuses["manual_pmay_female_ownership"] == "unknown"
+    assert statuses["manual_pmay_vertical"] == "unknown"
+
+    above_limit = result_for(
+        check(client, area="urban", annual_income=900_001), "pmay-urban"
+    )
+    assert above_limit["outcome"] == "ineligible"
+    assert condition_statuses(above_limit)["annual_income_up_to_900000"] == "fail"
+
+
 def test_results_are_ranked_by_outcome_then_name(client: TestClient) -> None:
-    body = check(client, age=72)
+    body = check(client, age=72, indian_citizen=True)
     ranks = [OUTCOME_RANK[result["outcome"]] for result in body["results"]]
 
     assert ranks == sorted(ranks)
@@ -543,7 +655,7 @@ def test_evaluation_does_not_modify_the_dataset(client: TestClient) -> None:
 
 
 def test_results_are_localised(client: TestClient) -> None:
-    body = check(client, age=72, language="ml")
+    body = check(client, age=72, indian_citizen=True, language="ml")
     result = result_for(body, "pm-jay")
 
     assert body["language"] == "ml"

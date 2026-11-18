@@ -601,13 +601,26 @@ const en = {
         label: 'Below Poverty Line (BPL) household',
         hint: 'As recorded on your ration card.',
       },
-      income_tax_payer: { label: 'I or my household pay income tax' },
+      income_tax_payer: {
+        label: 'I or my household paid income tax in the last assessment year',
+      },
+      ever_income_tax_payer: {
+        label: 'I have ever been an income-tax payer (APY bar)',
+      },
       bank_account: { label: 'Bank account in my own name' },
       monthly_pension: {
         label: 'Monthly pension (₹)',
         placeholder: 'Enter 0 if none',
       },
       government_employee: { label: 'Government employee' },
+      excluded_government_job: {
+        label:
+          'A family member is a serving or retired government, public-sector, autonomous-body or local-body employee (MTS, Class IV and Group D are exempt)',
+      },
+      constitutional_post_holder: {
+        label:
+          'A family member is or was a constitutional post holder, minister, MP, MLA, MLC, mayor or district panchayat chairperson',
+      },
       registered_professional: {
         label:
           'Registered professional (doctor, engineer, lawyer, chartered accountant)',
@@ -635,13 +648,23 @@ const en = {
         label: 'Willing to do unskilled manual work',
       },
       street_vendor: { label: 'I am a street vendor' },
+      unique_upi_id: {
+        label: 'I have a valid UPI ID not already used by another beneficiary',
+      },
+      loan_npa_or_written_off: {
+        label: 'An existing loan account is an NPA or has been written off',
+      },
       lost_parent: { label: 'A parent is deceased' },
       education_level: {
         label: 'Current education',
         placeholder: 'Choose education level',
       },
       dialysis_patient: { label: 'Patient needs dialysis' },
-      transplant_patient: { label: 'Patient needs an organ transplant' },
+      transplant_patient: { label: 'Patient had a kidney or liver transplant' },
+      years_since_transplant: {
+        label: 'Years since the transplant',
+        placeholder: 'Enter 0 to 100',
+      },
       hemophilia_patient: { label: 'Patient has haemophilia' },
       sickle_cell_patient: { label: 'Patient has sickle cell disease' },
     },
@@ -662,6 +685,7 @@ const en = {
       education: {
         below_school: 'Below school age',
         school_or_college: 'At school or college',
+        degree_or_professional: 'In a degree or professional degree course',
         completed_degree: 'Completed a degree',
         not_studying: 'Not studying',
       },
@@ -673,6 +697,7 @@ const en = {
       age: 'Enter a whole number between 0 and 120.',
       annual_income: 'Enter a whole number of ₹0 or more.',
       monthly_pension: 'Enter a whole number of ₹0 or more.',
+      years_since_transplant: 'Enter a whole number between 0 and 100.',
     },
     errorTitle: 'The eligibility check could not run',
     errorCopy:

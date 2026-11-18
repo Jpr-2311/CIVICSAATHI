@@ -53,6 +53,9 @@ ALLOWED_SOURCE_DOMAINS: dict[str, str] = {
         "release channel; used where a scheme portal does not publish the "
         "eligibility detail in accessible HTML."
     ),
+    "pmay-urban.gov.in": (
+        "PMAY-U 2.0 operational guidelines, Ministry of Housing and Urban Affairs."
+    ),
     "pmaymis.gov.in": (
         "Pradhan Mantri Awas Yojana (Urban) management information system, "
         "Ministry of Housing and Urban Affairs."

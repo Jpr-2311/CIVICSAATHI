@@ -46,13 +46,17 @@ def test_curated_file_exists() -> None:
 
 
 def test_dataset_validates(dataset: SchemeDataset) -> None:
-    assert dataset.version >= 2
+    assert dataset.version >= 3
     assert dataset.note.strip()
 
 
 def test_dataset_has_the_expected_coverage(dataset: SchemeDataset) -> None:
     assert len(dataset.schemes) == 15
-    assert len(dataset.conditions) == 45
+    assert len(dataset.conditions) == 53
+    manual = [c for c in dataset.conditions.values() if c.kind == "manual"]
+    profile = [c for c in dataset.conditions.values() if c.kind == "profile"]
+    assert len(manual) == 9
+    assert len(profile) == 44
 
     central = [s for s in dataset.schemes if s.government_level == "central"]
     state = [s for s in dataset.schemes if s.government_level == "state"]
@@ -159,6 +163,164 @@ def test_manual_conditions_are_labelled_and_have_no_profile_rule(
         assert condition.field is None
         assert condition.operator is None
         assert condition.value is None
+
+
+def _scheme(dataset: SchemeDataset, scheme_id: str):
+    return next(scheme for scheme in dataset.schemes if scheme.id == scheme_id)
+
+
+def _route_ids(scheme, route_index: int = 0) -> set[str]:
+    return set(scheme.rule.any_of[route_index].all_of)
+
+
+def test_removed_conditions_are_gone(dataset: SchemeDataset) -> None:
+    for condition_id in (
+        "no_unpaid_similar_loan",
+        "school_or_preschool",
+        "annual_income_up_to_20000",
+        "annual_income_up_to_22375",
+    ):
+        assert condition_id not in dataset.conditions
+
+
+def test_corrected_condition_definitions(dataset: SchemeDataset) -> None:
+    expected = {
+        "never_income_tax_payer": ("ever_income_tax_payer", "falsy", None),
+        "not_excluded_government_job": ("excluded_government_job", "falsy", None),
+        "not_constitutional_post_holder": (
+            "constitutional_post_holder",
+            "falsy",
+            None,
+        ),
+        "monthly_pension_below_10000": ("monthly_pension", "lt", 10000),
+        "svanidhi_unique_upi_id": ("unique_upi_id", "truthy", None),
+        "no_loan_npa_or_written_off": ("loan_npa_or_written_off", "falsy", None),
+        "annual_income_below_20000": ("annual_income", "lt", 20000),
+        "annual_income_below_22375": ("annual_income", "lt", 22375),
+        "annual_income_up_to_900000": ("annual_income", "lte", 900000),
+        "student_up_to_degree": (
+            "education_level",
+            "in",
+            ["below_school", "school_or_college", "degree_or_professional"],
+        ),
+        "transplant_within_5_years": ("years_since_transplant", "lte", 5),
+    }
+    for condition_id, (field, operator, value) in expected.items():
+        condition = dataset.conditions[condition_id]
+        assert condition.kind == "profile"
+        assert condition.field == field
+        assert condition.operator == operator
+        assert condition.value == value
+
+    for condition_id in (
+        "manual_pmay_no_allotment_20_years",
+        "manual_pmay_female_ownership",
+    ):
+        assert dataset.conditions[condition_id].kind == "manual"
+
+
+def test_corrected_rules_include_every_new_condition(dataset: SchemeDataset) -> None:
+    kisan = _route_ids(_scheme(dataset, "pm-kisan"))
+    assert {
+        "not_excluded_government_job",
+        "not_constitutional_post_holder",
+        "monthly_pension_below_10000",
+    } <= kisan
+    assert "not_government_employee" not in kisan
+
+    apy = _route_ids(_scheme(dataset, "atal-pension-yojana"))
+    assert "never_income_tax_payer" in apy
+    assert "not_income_tax_payer" not in apy
+
+    svanidhi = _route_ids(_scheme(dataset, "pm-svanidhi"))
+    assert {
+        "age_18_or_above",
+        "svanidhi_unique_upi_id",
+        "no_loan_npa_or_written_off",
+        "manual_svanidhi_ulb",
+    } <= svanidhi
+    assert "no_unpaid_similar_loan" not in svanidhi
+    assert "urban_resident" not in svanidhi
+
+    pmay = _route_ids(_scheme(dataset, "pmay-urban"))
+    assert {
+        "annual_income_up_to_900000",
+        "manual_pmay_no_allotment_20_years",
+        "manual_pmay_female_ownership",
+    } <= pmay
+
+    pmjay = _scheme(dataset, "pm-jay")
+    assert all("indian_citizen" in _route_ids(pmjay, i) for i in range(2))
+
+    snehapoorvam = _scheme(dataset, "snehapoorvam")
+    for i in range(3):
+        assert "student_up_to_degree" in _route_ids(snehapoorvam, i)
+    assert "annual_income_below_20000" in _route_ids(snehapoorvam, 1)
+    assert "annual_income_below_22375" in _route_ids(snehapoorvam, 2)
+
+    samaswasam = _scheme(dataset, "samaswasam")
+    assert "transplant_within_5_years" in _route_ids(samaswasam, 1)
+
+
+def test_corrected_sources_are_recorded(dataset: SchemeDataset) -> None:
+    pmjay = _scheme(dataset, "pm-jay")
+    urls = {source.url for source in [pmjay.source, *pmjay.additional_sources]}
+    assert "https://pib.gov.in/PressReleasePage.aspx?PRID=2053883" in urls
+    assert "https://pib.gov.in/PressReleasePage.aspx?PRID=2290627" in urls
+    assert not any("PRID=1738169" in url for url in urls)
+
+    svanidhi = _scheme(dataset, "pm-svanidhi")
+    urls = {source.url for source in [svanidhi.source, *svanidhi.additional_sources]}
+    assert "https://pib.gov.in/PressReleasePage.aspx?PRID=2288503" in urls
+    assert "https://pib.gov.in/PressReleasePage.aspx?PRID=2303797" in urls
+    assert not any("pmsvanidhi.mohua.gov.in" in url for url in urls)
+
+    pmay = _scheme(dataset, "pmay-urban")
+    assert pmay.source.url == (
+        "https://pmay-urban.gov.in/uploads/guidelines/"
+        "Operational-Guidelines-of-PMAY-U-2.pdf"
+    )
+
+    for scheme_id in ("pmjjby", "pmsby"):
+        source = _scheme(dataset, scheme_id).source
+        assert source.url.startswith("https://jansuraksha.gov.in/")
+        assert "www." not in source.url
+
+    ignoaps = _scheme(dataset, "ignoaps")
+    assert any(
+        source.url == "https://nsap.dord.gov.in/circular.do?method=faq"
+        for source in ignoaps.additional_sources
+    )
+
+
+def test_corrected_editorial_wording_is_localised(dataset: SchemeDataset) -> None:
+    pmjay = _scheme(dataset, "pm-jay")
+    assert "70 വയസ്സോ അതിൽ കൂടുതലോ" in pmjay.summary.ml
+
+    kasp = _scheme(dataset, "kasp")
+    assert "age or family-size limit" not in kasp.description.en
+    assert "പ്രായത്തിനോ കുടുംബാംഗങ്ങളുടെ എണ്ണത്തിനോ" not in kasp.description.ml
+
+    snehasanthwanam = _scheme(dataset, "snehasanthwanam")
+    assert "Aswasakiranam" in snehasanthwanam.description.en
+
+    for scheme_id in (
+        "pm-kisan",
+        "atal-pension-yojana",
+        "pmjjby",
+        "pmsby",
+        "pm-svanidhi",
+        "ignoaps",
+        "pm-jay",
+        "pmay-urban",
+        "kasp",
+        "snehapoorvam",
+        "samaswasam",
+        "snehasanthwanam",
+    ):
+        assert _scheme(dataset, scheme_id).verified_on.isoformat() == "2026-11-18"
+    for scheme_id in ("pm-vishwakarma", "mgnrega", "vayomithram"):
+        assert _scheme(dataset, scheme_id).verified_on.isoformat() == "2026-11-16"
 
 
 def test_repository_loads_and_caches_the_validated_dataset() -> None:

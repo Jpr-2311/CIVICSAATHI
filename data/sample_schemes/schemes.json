@@ -1,7 +1,7 @@
 {
-  "version": 2,
-  "updated_at": "2026-11-16",
-  "note": "Curated on 2026-11-16 from official Government of India and Government of Kerala sources. English content is the verified editorial summary. Malayalam and Hindi are editorial translations of the interface content, not official translations. This catalogue is a demonstration service and is not an official eligibility decision.",
+  "version": 3,
+  "updated_at": "2026-11-18",
+  "note": "Curated on 2026-11-16 and corrected on 2026-11-18 from official Government of India and Government of Kerala sources. English content is the verified editorial summary. Malayalam and Hindi are editorial translations of the interface content, not official translations. This catalogue is a demonstration service and is not an official eligibility decision.",
   "conditions": {
     "indian_citizen": {
       "id": "indian_citizen",
@@ -154,28 +154,28 @@
       "field": "bpl",
       "operator": "truthy"
     },
-    "annual_income_up_to_20000": {
-      "id": "annual_income_up_to_20000",
+    "annual_income_below_20000": {
+      "id": "annual_income_below_20000",
       "kind": "profile",
       "label": {
-        "en": "Your annual family income is ₹20,000 or less",
-        "ml": "നിങ്ങളുടെ കുടുംബത്തിന്റെ വാർഷിക വരുമാനം ₹20,000 അല്ലെങ്കിൽ അതിൽ കുറവാണ്",
-        "hi": "आपके परिवार की वार्षिक आय ₹20,000 या कम है"
+        "en": "Your annual family income is below ₹20,000",
+        "ml": "നിങ്ങളുടെ കുടുംബത്തിന്റെ വാർഷിക വരുമാനം ₹20,000-ൽ താഴെയാണ്",
+        "hi": "आपके परिवार की वार्षिक आय ₹20,000 से कम है"
       },
       "field": "annual_income",
-      "operator": "lte",
+      "operator": "lt",
       "value": 20000
     },
-    "annual_income_up_to_22375": {
-      "id": "annual_income_up_to_22375",
+    "annual_income_below_22375": {
+      "id": "annual_income_below_22375",
       "kind": "profile",
       "label": {
-        "en": "Your annual family income is ₹22,375 or less",
-        "ml": "നിങ്ങളുടെ കുടുംബത്തിന്റെ വാർഷിക വരുമാനം ₹22,375 അല്ലെങ്കിൽ അതിൽ കുറവാണ്",
-        "hi": "आपके परिवार की वार्षिक आय ₹22,375 या कम है"
+        "en": "Your annual family income is below ₹22,375",
+        "ml": "നിങ്ങളുടെ കുടുംബത്തിന്റെ വാർഷിക വരുമാനം ₹22,375-ൽ താഴെയാണ്",
+        "hi": "आपके परिवार की वार्षिक आय ₹22,375 से कम है"
       },
       "field": "annual_income",
-      "operator": "lte",
+      "operator": "lt",
       "value": 22375
     },
     "annual_income_below_100000": {
@@ -189,6 +189,18 @@
       "field": "annual_income",
       "operator": "lt",
       "value": 100000
+    },
+    "annual_income_up_to_900000": {
+      "id": "annual_income_up_to_900000",
+      "kind": "profile",
+      "label": {
+        "en": "Your annual family income is ₹9,00,000 or less",
+        "ml": "നിങ്ങളുടെ കുടുംബത്തിന്റെ വാർഷിക വരുമാനം ₹9,00,000 അല്ലെങ്കിൽ അതിൽ കുറവാണ്",
+        "hi": "आपके परिवार की वार्षिक आय ₹9,00,000 या कम है"
+      },
+      "field": "annual_income",
+      "operator": "lte",
+      "value": 900000
     },
     "landholding_farmer": {
       "id": "landholding_farmer",
@@ -223,6 +235,17 @@
       "field": "income_tax_payer",
       "operator": "falsy"
     },
+    "never_income_tax_payer": {
+      "id": "never_income_tax_payer",
+      "kind": "profile",
+      "label": {
+        "en": "You have never been an income-tax payer",
+        "ml": "നിങ്ങൾ ഒരിക്കലും ആദായനികുതി ദായകനായിട്ടില്ല",
+        "hi": "आप कभी भी आयकर दाता नहीं रहे हैं"
+      },
+      "field": "ever_income_tax_payer",
+      "operator": "falsy"
+    },
     "not_government_employee": {
       "id": "not_government_employee",
       "kind": "profile",
@@ -232,6 +255,28 @@
         "hi": "आपके परिवार का कोई सदस्य बहिष्कृत सरकारी नौकरी में नहीं है"
       },
       "field": "government_employee",
+      "operator": "falsy"
+    },
+    "not_excluded_government_job": {
+      "id": "not_excluded_government_job",
+      "kind": "profile",
+      "label": {
+        "en": "No family member is a serving or retired government, public-sector, autonomous-body or local-body employee (MTS, Class IV and Group D staff are exempt)",
+        "ml": "കുടുംബത്തിലെ ഒരാളും സേവനത്തിലുള്ളതോ വിരമിച്ചതോ ആയ സർക്കാർ, പൊതുമേഖല, സ്വയംഭരണ, തദ്ദേശ സ്ഥാപന ജീവനക്കാരനല്ല (MTS, ക്ലാസ് IV, ഗ്രൂപ്പ് D ഒഴികെ)",
+        "hi": "परिवार का कोई सदस्य सेवारत या सेवानिवृत्त सरकारी, सार्वजनिक उपक्रम, स्वायत्त निकाय या स्थानीय निकाय कर्मचारी नहीं है (एमटीएस, क्लास IV और ग्रुप D छूट प्राप्त हैं)"
+      },
+      "field": "excluded_government_job",
+      "operator": "falsy"
+    },
+    "not_constitutional_post_holder": {
+      "id": "not_constitutional_post_holder",
+      "kind": "profile",
+      "label": {
+        "en": "No family member is or was a constitutional post holder, minister, MP, MLA, MLC, mayor or district panchayat chairperson",
+        "ml": "കുടുംബത്തിലെ ഒരാളും ഭരണഘടനാ പദവി വഹിച്ചിട്ടില്ല, മന്ത്രിയോ എംപിയോ എംഎൽഎയോ എംഎൽസിയോ മേയറോ ജില്ലാ പഞ്ചായത്ത് അധ്യക്ഷനോ ആയിരുന്നിട്ടില്ല",
+        "hi": "परिवार का कोई सदस्य संवैधानिक पद धारक, मंत्री, सांसद, विधायक, एमएलसी, महापौर या जिला पंचायत अध्यक्ष नहीं है और न ही रहा है"
+      },
+      "field": "constitutional_post_holder",
       "operator": "falsy"
     },
     "not_registered_professional": {
@@ -249,12 +294,12 @@
       "id": "monthly_pension_below_10000",
       "kind": "profile",
       "label": {
-        "en": "Any monthly pension in your family is below ₹10,000 (enter 0 if there is none)",
-        "ml": "നിങ്ങളുടെ കുടുംബത്തിലെ പ്രതിമാസ പെൻഷൻ ₹10,000-ൽ താഴെയാണ് (പെൻഷൻ ഇല്ലെങ്കിൽ 0 നൽകുക)",
-        "hi": "आपके परिवार की कोई मासिक पेंशन ₹10,000 से कम है (पेंशन न हो तो 0 दर्ज करें)"
+        "en": "Any monthly pension in your family is below ₹10,000 (enter 0 if there is none; MTS, Class IV and Group D pensions are exempt)",
+        "ml": "നിങ്ങളുടെ കുടുംബത്തിലെ പ്രതിമാസ പെൻഷൻ ₹10,000-ൽ താഴെയാണ് (പെൻഷൻ ഇല്ലെങ്കിൽ 0 നൽകുക; MTS, ക്ലാസ് IV, ഗ്രൂപ്പ് D പെൻഷനുകൾ ഒഴിവാണ്)",
+        "hi": "आपके परिवार की कोई मासिक पेंशन ₹10,000 से कम है (पेंशन न हो तो 0 दर्ज करें; एमटीएस, क्लास IV और ग्रुप D पेंशन छूट प्राप्त हैं)"
       },
       "field": "monthly_pension",
-      "operator": "lte",
+      "operator": "lt",
       "value": 10000
     },
     "savings_bank_account": {
@@ -334,17 +379,6 @@
       "field": "similar_loan_in_5_years",
       "operator": "falsy"
     },
-    "no_unpaid_similar_loan": {
-      "id": "no_unpaid_similar_loan",
-      "kind": "profile",
-      "label": {
-        "en": "You do not have an unpaid loan from a similar government scheme",
-        "ml": "സമാനമായ സർക്കാർ പദ്ധതിയിൽ നിങ്ങൾക്ക് കുടിശ്ശികയുള്ള വായ്പയില്ല",
-        "hi": "समान सरकारी योजना का आप पर कोई बकाया ऋण नहीं है"
-      },
-      "field": "similar_loan_unrepaid",
-      "operator": "falsy"
-    },
     "willing_manual_work": {
       "id": "willing_manual_work",
       "kind": "profile",
@@ -367,6 +401,28 @@
       "field": "street_vendor",
       "operator": "truthy"
     },
+    "svanidhi_unique_upi_id": {
+      "id": "svanidhi_unique_upi_id",
+      "kind": "profile",
+      "label": {
+        "en": "You have a valid UPI ID that is not already registered by another beneficiary",
+        "ml": "മറ്റൊരു ഗുണഭോക്താവ് രജിസ്റ്റർ ചെയ്യാത്ത സാധുവായ UPI ഐഡി നിങ്ങൾക്കുണ്ട്",
+        "hi": "आपके पास एक मान्य UPI आईडी है जो किसी अन्य लाभार्थी द्वारा पहले से पंजीकृत नहीं है"
+      },
+      "field": "unique_upi_id",
+      "operator": "truthy"
+    },
+    "no_loan_npa_or_written_off": {
+      "id": "no_loan_npa_or_written_off",
+      "kind": "profile",
+      "label": {
+        "en": "None of your existing loan accounts is classified as a non-performing asset (NPA) or has been written off",
+        "ml": "നിങ്ങളുടെ നിലവിലുള്ള വായ്പ അക്കൗണ്ടുകളിൽ ഒന്നും NPA ആയി തരംതിരിച്ചിട്ടില്ല, എഴുതിത്തള്ളിയിട്ടില്ല",
+        "hi": "आपके मौजूदा ऋण खातों में से कोई भी एनपीए (NPA) के रूप में वर्गीकृत नहीं है और न ही बट्टे खाते में डाला गया है"
+      },
+      "field": "loan_npa_or_written_off",
+      "operator": "falsy"
+    },
     "lost_parent": {
       "id": "lost_parent",
       "kind": "profile",
@@ -378,19 +434,20 @@
       "field": "lost_parent",
       "operator": "truthy"
     },
-    "school_or_preschool": {
-      "id": "school_or_preschool",
+    "student_up_to_degree": {
+      "id": "student_up_to_degree",
       "kind": "profile",
       "label": {
-        "en": "The child is studying in pre-school, school or college below degree level",
-        "ml": "കുട്ടി പ്രീ-സ്കൂൾ, സ്കൂൾ അല്ലെങ്കിൽ ഡിഗ്രിക്ക് താഴെയുള്ള കോളേജിൽ പഠിക്കുന്നു",
-        "hi": "बच्चा प्री-स्कूल, स्कूल या डिग्री से नीचे कॉलेज में पढ़ रहा है"
+        "en": "The child is studying from pre-school up to a degree or professional degree course",
+        "ml": "കുട്ടി പ്രീ-സ്കൂൾ മുതൽ ഡിഗ്രി അല്ലെങ്കിൽ പ്രൊഫഷണൽ ഡിഗ്രി കോഴ്സ് വരെ പഠിക്കുന്നു",
+        "hi": "बच्चा प्री-स्कूल से डिग्री या पेशेवर डिग्री पाठ्यक्रम तक पढ़ रहा है"
       },
       "field": "education_level",
       "operator": "in",
       "value": [
         "below_school",
-        "school_or_college"
+        "school_or_college",
+        "degree_or_professional"
       ]
     },
     "dialysis_patient": {
@@ -414,6 +471,18 @@
       },
       "field": "transplant_patient",
       "operator": "truthy"
+    },
+    "transplant_within_5_years": {
+      "id": "transplant_within_5_years",
+      "kind": "profile",
+      "label": {
+        "en": "Your kidney or liver transplant was performed within the last five years",
+        "ml": "നിങ്ങളുടെ വൃക്ക അല്ലെങ്കിൽ കരൾ മാറ്റിവയ്ക്കൽ കഴിഞ്ഞ അഞ്ച് വർഷത്തിനിടയിൽ നടന്നതാണ്",
+        "hi": "आपका गुर्दा या यकृत प्रत्यारोपण पिछले पाँच वर्षों के भीतर हुआ है"
+      },
+      "field": "years_since_transplant",
+      "operator": "lte",
+      "value": 5
     },
     "hemophilia_patient": {
       "id": "hemophilia_patient",
@@ -453,9 +522,9 @@
       "id": "manual_pmjay_secc",
       "kind": "manual",
       "label": {
-        "en": "Your family is included in the SECC 2011 deprivation or occupational criteria used for PM-JAY",
-        "ml": "നിങ്ങളുടെ കുടുംബം PM-JAY-ന് ഉപയോഗിക്കുന്ന SECC 2011 വിഭാഗങ്ങളിൽ ഉൾപ്പെടുന്നു",
-        "hi": "आपका परिवार PM-JAY के लिए उपयोग किए जाने वाले SECC 2011 मानदंडों में शामिल है"
+        "en": "Your family is included in the SECC 2011 deprivation or occupational criteria, is an ASHA, Anganwadi worker or Anganwadi helper family, or is otherwise identified as eligible by the state under AB PM-JAY",
+        "ml": "നിങ്ങളുടെ കുടുംബം SECC 2011-ലെ വിഭാഗീയ അല്ലെങ്കിൽ തൊഴിൽ മാനദണ്ഡങ്ങളിൽ ഉൾപ്പെടുന്നു, ആശാ/അങ്കണവാടി വർക്കർ/ഹെൽപ്പർ കുടുംബമാണ്, അല്ലെങ്കിൽ AB PM-JAY പ്രകാരം സംസ്ഥാനം യോഗ്യമായി തിരിച്ചറിഞ്ഞിട്ടുണ്ട്",
+        "hi": "आपका परिवार SECC 2011 के वंचना या व्यवसाय मानदंडों में शामिल है, आशा/आंगनवाड़ी कार्यकर्ता/सहायक परिवार है, या AB PM-JAY के तहत राज्य द्वारा पात्र के रूप में पहचाना गया है"
       }
     },
     "manual_pmay_no_pucca_house": {
@@ -467,13 +536,31 @@
         "hi": "आपके परिवार के पास भारत में कहीं भी पक्का घर नहीं है"
       }
     },
+    "manual_pmay_no_allotment_20_years": {
+      "id": "manual_pmay_no_allotment_20_years",
+      "kind": "manual",
+      "label": {
+        "en": "No member of your family has been allotted a pucca house under PMAY-U or another central or state housing scheme in the last 20 years",
+        "ml": "കഴിഞ്ഞ 20 വർഷത്തിനിടയിൽ PMAY-U അല്ലെങ്കിൽ മറ്റേതെങ്കിലും കേന്ദ്ര/സംസ്ഥാന ഭവന പദ്ധതി പ്രകാരം കുടുംബാംഗത്തിന് പക്കാ വീട് അനുവദിച്ചിട്ടില്ല",
+        "hi": "पिछले 20 वर्षों में परिवार के किसी सदस्य को PMAY-U या किसी अन्य केंद्रीय या राज्य आवास योजना के तहत पक्का घर आवंटित नहीं हुआ है"
+      }
+    },
+    "manual_pmay_female_ownership": {
+      "id": "manual_pmay_female_ownership",
+      "kind": "manual",
+      "label": {
+        "en": "The house is owned or co-owned by the female head of the family, or a guideline exception applies",
+        "ml": "വീട് കുടുംബത്തിലെ വനിതാ മേധാവിയുടെ ഉടമസ്ഥതയിലോ സഹ-ഉടമസ്ഥതയിലോ ആണ്, അല്ലെങ്കിൽ മാർഗ്ഗനിർദ്ദേശത്തിലെ ഒരു ഒഴിവ് ബാധകമാണ്",
+        "hi": "घर परिवार की महिला मुखिया के स्वामित्व या सह-स्वामित्व में है, या दिशानिर्देशों का कोई अपवाद लागू है"
+      }
+    },
     "manual_pmay_vertical": {
       "id": "manual_pmay_vertical",
       "kind": "manual",
       "label": {
-        "en": "Your family meets the income, category and ownership rules of an applicable PMAY-U vertical",
-        "ml": "നിങ്ങളുടെ കുടുംബം ബാധകമായ PMAY-U വിഭാഗത്തിന്റെ വരുമാന, വിഭാഗ, ഉടമസ്ഥതാ നിയമങ്ങൾ പാലിക്കുന്നു",
-        "hi": "आपका परिवार लागू PMAY-U वर्टिकल के आय, श्रेणी और स्वामित्व नियमों को पूरा करता है"
+        "en": "Your family meets the rules of an applicable PMAY-U 2.0 vertical (BLC, AHP, ARH or ISS), including its income band",
+        "ml": "നിങ്ങളുടെ കുടുംബം ബാധകമായ PMAY-U 2.0 വിഭാഗത്തിന്റെ (BLC, AHP, ARH അല്ലെങ്കിൽ ISS) നിയമങ്ങളും വരുമാന പരിധിയും പാലിക്കുന്നു",
+        "hi": "आपका परिवार लागू PMAY-U 2.0 वर्टिकल (BLC, AHP, ARH या ISS) के नियमों और उसकी आय श्रेणी को पूरा करता है"
       }
     },
     "manual_kasp_list": {
@@ -489,9 +576,9 @@
       "id": "manual_svanidhi_ulb",
       "kind": "manual",
       "label": {
-        "en": "You vend within the jurisdiction of a participating urban local body",
-        "ml": "പങ്കെടുക്കുന്ന ഒരു നഗര തദ്ദേശ സ്ഥാപനത്തിന്റെ പരിധിയിൽ നിങ്ങൾ വ്യാപാരം ചെയ്യുന്നു",
-        "hi": "आप किसी भाग लेने वाले शहरी स्थानीय निकाय की सीमा में विक्रय करते हैं"
+        "en": "You vend in a statutory town, census town or peri-urban area within the jurisdiction of a participating urban local body",
+        "ml": "പങ്കെടുക്കുന്ന ഒരു നഗര തദ്ദേശ സ്ഥാപനത്തിന്റെ പരിധിയിലുള്ള സ്റ്റാറ്റ്യൂട്ടറി ടൗൺ, സെൻസസ് ടൗൺ അല്ലെങ്കിൽ പെരി-അർബൻ പ്രദേശത്ത് നിങ്ങൾ വ്യാപാരം ചെയ്യുന്നു",
+        "hi": "आप किसी भाग लेने वाले शहरी स्थानीय निकाय की सीमा के भीतर स्थायी नगर, जनगणना नगर या परि-शहरी क्षेत्र में विक्रय करते हैं"
       }
     },
     "manual_vayomithram_area": {
@@ -532,9 +619,9 @@
         "hi": "भूमि-स्वामी किसान परिवारों के लिए सालाना ₹6,000 की आय सहायता, तीन किस्तों में।"
       },
       "description": {
-        "en": "PM-KISAN is a central sector scheme that supplements the income of landholding farmer families with ₹6,000 per year, released directly to bank accounts in three ₹2,000 instalments. Families excluded by the scheme's higher-income rules cannot receive the benefit.",
-        "ml": "ഭൂവുടമ കർഷക കുടുംബങ്ങളുടെ വരുമാനം വർധിപ്പിക്കാൻ വർഷത്തിൽ ₹6,000 നൽകുന്ന കേന്ദ്ര മേഖലാ പദ്ധതിയാണ് PM-KISAN. ₹2,000 വീതമുള്ള മൂന്ന് ഗഡുക്കളായി ബാങ്ക് അക്കൗണ്ടുകളിലേക്ക് നേരിട്ട് നൽകുന്നു. ഉയർന്ന വരുമാനമുള്ള വിഭാഗങ്ങളെ പദ്ധതിയിൽ നിന്ന് ഒഴിവാക്കുന്നു.",
-        "hi": "PM-KISAN एक केंद्रीय क्षेत्र की योजना है जो भूमि-स्वामी किसान परिवारों की आय में सालाना ₹6,000 जोड़ती है। यह ₹2,000 की तीन किस्तों में सीधे बैंक खातों में भेजी जाती है। उच्च आय वर्ग के लिए लागू बहिष्करण शर्तों वाले परिवार लाभ नहीं पा सकते।"
+        "en": "PM-KISAN is a central sector scheme that supplements the income of landholding farmer families with ₹6,000 per year, released directly to bank accounts in three ₹2,000 instalments. Families are excluded if a member holds a constitutional post, is or was a minister, MP, MLA, MLC, mayor or district panchayat chairperson, is a serving or retired government, public-sector, autonomous-body or local-body employee (except MTS, Class IV and Group D staff), paid income tax in the last assessment year, is a practising registered professional, or receives a monthly pension of ₹10,000 or more.",
+        "ml": "ഭൂവുടമ കർഷക കുടുംബങ്ങളുടെ വരുമാനം വർധിപ്പിക്കാൻ വർഷത്തിൽ ₹6,000 നൽകുന്ന കേന്ദ്ര മേഖലാ പദ്ധതിയാണ് PM-KISAN. ₹2,000 വീതമുള്ള മൂന്ന് ഗഡുക്കളായി ബാങ്ക് അക്കൗണ്ടുകളിലേക്ക് നേരിട്ട് നൽകുന്നു. ഭരണഘടനാ പദവി വഹിക്കുന്നയാൾ, മന്ത്രി, എംപി, എംഎൽഎ, എംഎൽസി, മേയർ, ജില്ലാ പഞ്ചായത്ത് അധ്യക്ഷൻ; സേവനത്തിലുള്ളതോ വിരമിച്ചതോ ആയ സർക്കാർ, പൊതുമേഖല, സ്വയംഭരണ, തദ്ദേശ സ്ഥാപന ജീവനക്കാരൻ (MTS, ക്ലാസ് IV, ഗ്രൂപ്പ് D ഒഴികെ); കഴിഞ്ഞ നിർണ്ണയ വർഷത്തിൽ ആദായനികുതി അടച്ചയാൾ; പ്രാക്ടീസ് ചെയ്യുന്ന രജിസ്റ്റർ ചെയ്ത പ്രൊഫഷണൽ; അല്ലെങ്കിൽ പ്രതിമാസ പെൻഷൻ ₹10,000 അല്ലെങ്കിൽ അതിൽ കൂടുതലുള്ള ഒരു കുടുംബാംഗം എന്നിവരുള്ള കുടുംബങ്ങളെ ഒഴിവാക്കുന്നു.",
+        "hi": "PM-KISAN एक केंद्रीय क्षेत्र की योजना है जो भूमि-स्वामी किसान परिवारों की आय में सालाना ₹6,000 जोड़ती है। यह ₹2,000 की तीन किस्तों में सीधे बैंक खातों में भेजी जाती है। ऐसे परिवार बाहर रखे जाते हैं जिनमें कोई संवैधानिक पद धारक, मंत्री, सांसद, विधायक, एमएलसी, महापौर या जिला पंचायत अध्यक्ष है; कोई सेवारत या सेवानिवृत्त सरकारी, सार्वजनिक उपक्रम, स्वायत्त निकाय या स्थानीय निकाय कर्मचारी है (एमटीएस, क्लास IV और ग्रुप D को छोड़कर); पिछले निर्धारण वर्ष में आयकर दिया गया है; कोई पंजीकृत पेशेवर प्रैक्टिस करता है; या किसी सदस्य को ₹10,000 या अधिक की मासिक पेंशन मिलती है।"
       },
       "category": "agriculture",
       "government_level": "central",
@@ -588,17 +675,17 @@
         "title": "PM-KISAN official portal",
         "publisher": "Ministry of Agriculture and Farmers Welfare",
         "url": "https://pmkisan.gov.in/",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [
         {
           "title": "PM-KISAN operational guidelines (revised)",
           "publisher": "Department of Agriculture, Cooperation and Farmers Welfare",
           "url": "https://pmkisan.gov.in/Documents/RevisedPM-KISANOperationalGuidelines(English).pdf",
-          "verified_on": "2026-11-16"
+          "verified_on": "2026-11-18"
         }
       ],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "farmer",
         "kisan",
@@ -618,7 +705,8 @@
               "landholding_farmer",
               "not_institutional_landholder",
               "not_income_tax_payer",
-              "not_government_employee",
+              "not_excluded_government_job",
+              "not_constitutional_post_holder",
               "not_registered_professional",
               "monthly_pension_below_10000"
             ]
@@ -772,9 +860,9 @@
         "hi": "60 वर्ष के बाद नियमित अंशदान से ₹1,000 से ₹5,000 तक की गारंटीशुदा मासिक पेंशन।"
       },
       "description": {
-        "en": "APY is a voluntary pension scheme for workers in the unorganised sector. Subscribers contribute regularly until age 60 and then receive a government-guaranteed minimum pension of ₹1,000, ₹2,000, ₹3,000, ₹4,000 or ₹5,000 a month. The spouse receives the same pension after the subscriber's death, and the nominee receives the accumulated pension wealth.",
-        "ml": "അസംഘടിത മേഖലയിലെ തൊഴിലാളികൾക്കുള്ള സ്വമേധയാ പെൻഷൻ പദ്ധതിയാണ് APY. 60 വയസ്സുവരെ സ്ഥിരമായി സംഭാവന നൽകിയാൽ പ്രതിമാസം ₹1,000, ₹2,000, ₹3,000, ₹4,000 അല്ലെങ്കിൽ ₹5,000 സർക്കാർ ഉറപ്പുനൽകുന്ന പെൻഷൻ ലഭിക്കും. അംഗത്തിന്റെ മരണശേഷം ഇണയ്ക്ക് അതേ പെൻഷൻ ലഭിക്കും; നോമിനിക്ക് സമാഹരിച്ച പെൻഷൻ സമ്പാദ്യം ലഭിക്കും.",
-        "hi": "APY असंगठित क्षेत्र के श्रमिकों के लिए स्वैच्छिक पेंशन योजना है। ग्राहक 60 वर्ष तक नियमित अंशदान देते हैं और फिर ₹1,000, ₹2,000, ₹3,000, ₹4,000 या ₹5,000 की सरकार-गारंटीशुदा मासिक पेंशन पाते हैं। ग्राहक की मृत्यु के बाद पति या पत्नी को वही पेंशन मिलती है, और नामांकित व्यक्ति को जमा पेंशन संपदा मिलती है।"
+        "en": "APY is a voluntary pension scheme for workers in the unorganised sector. Subscribers contribute regularly until age 60 and then receive a government-guaranteed minimum pension of ₹1,000, ₹2,000, ₹3,000, ₹4,000 or ₹5,000 a month. The spouse receives the same pension after the subscriber's death, and the nominee receives the accumulated pension wealth. A person who is or has been an income-tax payer is not eligible to join.",
+        "ml": "അസംഘടിത മേഖലയിലെ തൊഴിലാളികൾക്കുള്ള സ്വമേധയാ പെൻഷൻ പദ്ധതിയാണ് APY. 60 വയസ്സുവരെ സ്ഥിരമായി സംഭാവന നൽകിയാൽ പ്രതിമാസം ₹1,000, ₹2,000, ₹3,000, ₹4,000 അല്ലെങ്കിൽ ₹5,000 സർക്കാർ ഉറപ്പുനൽകുന്ന പെൻഷൻ ലഭിക്കും. അംഗത്തിന്റെ മരണശേഷം ഇണയ്ക്ക് അതേ പെൻഷൻ ലഭിക്കും; നോമിനിക്ക് സമാഹരിച്ച പെൻഷൻ സമ്പാദ്യം ലഭിക്കും. ആദായനികുതി ദായകനായിരുന്നവരോ ഇപ്പോൾ ആദായനികുതി അടയ്ക്കുന്നവരോ APY-യിൽ ചേരാൻ അർഹരല്ല.",
+        "hi": "APY असंगठित क्षेत्र के श्रमिकों के लिए स्वैच्छिक पेंशन योजना है। ग्राहक 60 वर्ष तक नियमित अंशदान देते हैं और फिर ₹1,000, ₹2,000, ₹3,000, ₹4,000 या ₹5,000 की सरकार-गारंटीशुदा मासिक पेंशन पाते हैं। ग्राहक की मृत्यु के बाद पति या पत्नी को वही पेंशन मिलती है, और नामांकित व्यक्ति को जमा पेंशन संपदा मिलती है। जो व्यक्ति आयकर दाता है या रह चुका है, वह APY में शामिल नहीं हो सकता।"
       },
       "category": "pension",
       "government_level": "central",
@@ -838,10 +926,10 @@
         "title": "Atal Pension Yojana — PFRDA",
         "publisher": "Pension Fund Regulatory and Development Authority",
         "url": "https://www.pfrda.org.in/schemes/atal-pension-yojana-apy",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "pension",
         "apy",
@@ -858,7 +946,7 @@
               "indian_citizen",
               "age_18_to_40",
               "savings_bank_account",
-              "not_income_tax_payer",
+              "never_income_tax_payer",
               "not_already_enrolled"
             ]
           }
@@ -883,9 +971,9 @@
         "hi": "सालाना ₹436 प्रीमियम पर ₹2 लाख का जीवन बीमा कवर।"
       },
       "description": {
-        "en": "PMJJBY is a one-year renewable life insurance scheme for bank and post office account holders aged 18 to 50. It pays ₹2 lakh on death from any cause. The premium is deducted by auto-debit, and the cover must be renewed every year.",
-        "ml": "18 മുതൽ 50 വയസ്സ് വരെയുള്ള ബാങ്ക്, തപാൽ ഓഫീസ് അക്കൗണ്ട് ഉടമകൾക്കുള്ള ഒരു വർഷത്തേക്ക് പുതുക്കാവുന്ന ജീവൻ ഇൻഷുറൻസ് പദ്ധതിയാണ് PMJJBY. ഏതെങ്കിലും കാരണത്താൽ മരണം സംഭവിച്ചാൽ ₹2 ലക്ഷം നൽകും. പ്രീമിയം ഓട്ടോ-ഡെബിറ്റ് ചെയ്യുന്നു; എല്ലാ വർഷവും പരിരക്ഷ പുതുക്കണം.",
-        "hi": "PMJJBY 18 से 50 वर्ष के बैंक और डाकघर खाताधारकों के लिए एक वर्ष में नवीकरण योग्य जीवन बीमा योजना है। किसी भी कारण से मृत्यु पर ₹2 लाख मिलते हैं। प्रीमियम ऑटो-डेबिट से कटता है और कवर हर साल नवीकरण कराना होता है।"
+        "en": "PMJJBY is a one-year renewable life insurance scheme for bank and post office account holders aged 18 to 50. It pays ₹2 lakh on death from any cause. For first-time or rejoining subscribers, a 30-day lien applies to non-accidental deaths from the date of enrolment, and the premium is refunded if death occurs during that period. Cover can be renewed until age 55. The premium is deducted by auto-debit, and the cover must be renewed every year.",
+        "ml": "18 മുതൽ 50 വയസ്സ് വരെയുള്ള ബാങ്ക്, തപാൽ ഓഫീസ് അക്കൗണ്ട് ഉടമകൾക്കുള്ള ഒരു വർഷത്തേക്ക് പുതുക്കാവുന്ന ജീവൻ ഇൻഷുറൻസ് പദ്ധതിയാണ് PMJJBY. ഏതെങ്കിലും കാരണത്താൽ മരണം സംഭവിച്ചാൽ ₹2 ലക്ഷം നൽകും. ആദ്യമായി ചേരുന്നവർക്കും വീണ്ടും ചേരുന്നവർക്കും അപകടമല്ലാത്ത മരണത്തിന് ചേരുന്ന തീയതി മുതൽ 30 ദിവസത്തെ ലിയൻ ബാധകമാണ്; ഈ കാലയളവിൽ മരണം സംഭവിച്ചാൽ പ്രീമിയം തിരികെ നൽകും. 55 വയസ്സ് വരെ പരിരക്ഷ പുതുക്കാം. പ്രീമിയം ഓട്ടോ-ഡെബിറ്റ് ചെയ്യുന്നു; എല്ലാ വർഷവും പരിരക്ഷ പുതുക്കണം.",
+        "hi": "PMJJBY 18 से 50 वर्ष के बैंक और डाकघर खाताधारकों के लिए एक वर्ष में नवीकरण योग्य जीवन बीमा योजना है। किसी भी कारण से मृत्यु पर ₹2 लाख मिलते हैं। पहली बार या दोबारा जुड़ने वाले ग्राहकों के लिए नामांकन की तारीख से दुर्घटना-रहित मृत्यु पर 30 दिन का लियन लागू होता है; इस अवधि में मृत्यु होने पर प्रीमियम वापस किया जाता है। 55 वर्ष की आयु तक कवर नवीकरण योग्य है। प्रीमियम ऑटो-डेबिट से कटता है और कवर हर साल नवीकरण कराना होता है।"
       },
       "category": "insurance",
       "government_level": "central",
@@ -901,9 +989,14 @@
           "hi": "सदस्य की किसी भी कारण से मृत्यु पर ₹2 लाख देय।"
         },
         {
-          "en": "A one-year cover, renewable every year.",
-          "ml": "ഓരോ വർഷവും പുതുക്കാവുന്ന ഒരു വർഷത്തെ പരിരക്ഷ.",
-          "hi": "एक वर्ष का कवर, हर साल नवीकरण योग्य।"
+          "en": "A one-year cover, renewable every year until age 55.",
+          "ml": "ഓരോ വർഷവും പുതുക്കാവുന്ന ഒരു വർഷത്തെ പരിരക്ഷ, 55 വയസ്സ് വരെ.",
+          "hi": "एक वर्ष का कवर, हर साल नवीकरण योग्य, 55 वर्ष की आयु तक।"
+        },
+        {
+          "en": "For first-time or rejoining subscribers, a 30-day lien applies to non-accidental deaths; the premium is refunded if death occurs in this period.",
+          "ml": "ആദ്യമായി ചേരുന്നവർക്കും വീണ്ടും ചേരുന്നവർക്കും അപകടമല്ലാത്ത മരണത്തിന് 30 ദിവസത്തെ ലിയൻ ബാധകമാണ്; ഈ കാലയളവിൽ മരണം സംഭവിച്ചാൽ പ്രീമിയം തിരികെ നൽകും.",
+          "hi": "पहली बार या दोबारा जुड़ने वाले ग्राहकों के लिए दुर्घटना-रहित मृत्यु पर 30 दिन का लियन लागू होता है; इस अवधि में मृत्यु होने पर प्रीमियम वापस किया जाता है।"
         }
       ],
       "documents_required": [
@@ -943,11 +1036,11 @@
       "source": {
         "title": "PMJJBY rules (effective 1 June 2022)",
         "publisher": "Department of Financial Services, Ministry of Finance",
-        "url": "https://www.jansuraksha.gov.in/Files/PMJJBY/English/Rules.pdf",
-        "verified_on": "2026-11-16"
+        "url": "https://jansuraksha.gov.in/Files/PMJJBY/English/Rules.pdf",
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "insurance",
         "life insurance",
@@ -1048,11 +1141,11 @@
       "source": {
         "title": "PMSBY rules (effective 1 June 2022)",
         "publisher": "Department of Financial Services, Ministry of Finance",
-        "url": "https://www.jansuraksha.gov.in/Files/PMSBY/English/Rules.pdf",
-        "verified_on": "2026-11-16"
+        "url": "https://jansuraksha.gov.in/Files/PMSBY/English/Rules.pdf",
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "insurance",
         "accident",
@@ -1093,9 +1186,9 @@
         "hi": "स्ट्रीट वेंडरों के लिए बिना गारंटी कार्यशील पूंजी ऋण और डिजिटल कैशबैक।"
       },
       "description": {
-        "en": "PM SVANidhi gives street vendors access to collateral-free working capital loans in successive tranches. The official portal currently shows loan applications for ₹15,000, ₹25,000 and ₹50,000, with interest subsidy and cashback on digital transactions. Vendors must be identified by their urban local body, hold a certificate of vending or identity card, or obtain a letter of recommendation.",
-        "ml": "തെരുവ് വ്യാപാരികൾക്ക് തുടർച്ചയായ ഗഡുക്കളിൽ ഈടില്ലാത്ത പ്രവർത്തന മൂലധന വായ്പ നൽകുന്ന പദ്ധതിയാണ് PM SVANidhi. ഔദ്യോഗിക പോർട്ടലിൽ ഇപ്പോൾ ₹15,000, ₹25,000, ₹50,000 വായ്പ അപേക്ഷകൾ കാണാം; പലിശ സബ്സിഡിയും ഡിജിറ്റൽ ഇടപാടുകൾക്ക് ക്യാഷ്ബാക്കും ലഭിക്കും. നഗര തദ്ദേശ സ്ഥാപനം തിരിച്ചറിഞ്ഞ വ്യാപാരിയായിരിക്കണം, വെൻഡിംഗ് സർട്ടിഫിക്കറ്റ്/ഐഡി കാർഡ് ഉണ്ടായിരിക്കണം, അല്ലെങ്കിൽ ശുപാർശ കത്ത് നേടണം.",
-        "hi": "PM SVANidhi स्ट्रीट वेंडरों को क्रमिक किस्तों में बिना गारंटी कार्यशील पूंजी ऋण देती है। आधिकारिक पोर्टल पर अभी ₹15,000, ₹25,000 और ₹50,000 के ऋण आवेदन दिखते हैं, साथ में ब्याज सहायता और डिजिटल लेनदेन पर कैशबैक। विक्रेता को शहरी स्थानीय निकाय द्वारा चिह्नित होना, वेंडिंग प्रमाणपत्र या पहचान पत्र रखना, या अनुशंसा पत्र प्राप्त करना आवश्यक है।"
+        "en": "PM SVANidhi gives street vendors access to collateral-free working capital loans in successive tranches, currently ₹15,000, ₹25,000 and ₹50,000. Vendors must be at least 18 years old, have a valid UPI ID, and vend in a statutory town, census town or peri-urban area within the jurisdiction of a participating urban local body. A loan may be denied only if an existing loan account is classified as a non-performing asset or has been written off. The scheme also provides interest subsidy and cashback on digital transactions.",
+        "ml": "തെരുവ് വ്യാപാരികൾക്ക് തുടർച്ചയായ ഗഡുക്കളിൽ ഈടില്ലാത്ത പ്രവർത്തന മൂലധന വായ്പ നൽകുന്ന പദ്ധതിയാണ് PM SVANidhi; ഇപ്പോൾ ₹15,000, ₹25,000, ₹50,000 വായ്പകൾ ലഭ്യമാണ്. വ്യാപാരിക്ക് കുറഞ്ഞത് 18 വയസ്സ് പ്രായമുണ്ടായിരിക്കണം, സാധുവായ UPI ഐഡി ഉണ്ടായിരിക്കണം, പങ്കെടുക്കുന്ന നഗര തദ്ദേശ സ്ഥാപനത്തിന്റെ പരിധിയിലുള്ള സ്റ്റാറ്റ്യൂട്ടറി ടൗൺ, സെൻസസ് ടൗൺ അല്ലെങ്കിൽ പെരി-അർബൻ പ്രദേശത്ത് വ്യാപാരം ചെയ്യണം. നിലവിലുള്ള വായ്പ അക്കൗണ്ട് NPA ആയാൽ മാത്രമോ എഴുതിത്തള്ളിയാൽ മാത്രമോ വായ്പ നിഷേധിക്കാം. പലിശ സബ്സിഡിയും ഡിജിറ്റൽ ഇടപാടുകൾക്ക് ക്യാഷ്ബാക്കും ലഭിക്കും.",
+        "hi": "PM SVANidhi स्ट्रीट वेंडरों को क्रमिक किस्तों में बिना गारंटी कार्यशील पूंजी ऋण देती है; अभी ₹15,000, ₹25,000 और ₹50,000 के ऋण उपलब्ध हैं। विक्रेता की आयु कम से कम 18 वर्ष होनी चाहिए, उसके पास मान्य UPI आईडी होनी चाहिए, और वह किसी भाग लेने वाले शहरी स्थानीय निकाय की सीमा के भीतर स्थायी नगर, जनगणना नगर या परि-शहरी क्षेत्र में विक्रय करता हो। ऋण केवल तब अस्वीकार किया जा सकता है जब मौजूदा ऋण खाता एनपीए हो या बट्टे खाते में डाल दिया गया हो। योजना ब्याज सहायता और डिजिटल लेनदेन पर कैशबैक भी देती है।"
       },
       "category": "business",
       "government_level": "central",
@@ -1106,9 +1199,9 @@
       },
       "benefits": [
         {
-          "en": "Collateral-free working capital loans in successive tranches, currently ₹15,000, ₹25,000 and ₹50,000 on the official portal.",
-          "ml": "തുടർച്ചയായ ഗഡുക്കളിൽ ഈടില്ലാത്ത പ്രവർത്തന മൂലധന വായ്പ; ഔദ്യോഗിക പോർട്ടലിൽ ഇപ്പോൾ ₹15,000, ₹25,000, ₹50,000.",
-          "hi": "क्रमिक किस्तों में बिना गारंटी कार्यशील पूंजी ऋण; आधिकारिक पोर्टल पर अभी ₹15,000, ₹25,000 और ₹50,000।"
+          "en": "Collateral-free working capital loans in successive tranches of ₹15,000, ₹25,000 and ₹50,000.",
+          "ml": "₹15,000, ₹25,000, ₹50,000 എന്നിങ്ങനെ തുടർച്ചയായ ഗഡുക്കളിൽ ഈടില്ലാത്ത പ്രവർത്തന മൂലധന വായ്പ.",
+          "hi": "₹15,000, ₹25,000 और ₹50,000 की क्रमिक किस्तों में बिना गारंटी कार्यशील पूंजी ऋण।"
         },
         {
           "en": "Interest subsidy and cashback for digital transactions.",
@@ -1116,9 +1209,9 @@
           "hi": "डिजिटल लेनदेन पर ब्याज सहायता और कैशबैक।"
         },
         {
-          "en": "Access to the PM SVANidhi credit card after repayment.",
-          "ml": "തിരിച്ചടവിന് ശേഷം PM SVANidhi ക്രെഡിറ്റ് കാർഡ് ലഭ്യമാകും.",
-          "hi": "पुनर्भुगतान के बाद PM SVANidhi क्रेडिट कार्ड।"
+          "en": "UPI-linked RuPay credit card with a credit limit of up to ₹30,000 after repaying the second tranche.",
+          "ml": "രണ്ടാം ഗഡു തിരിച്ചടച്ചതിന് ശേഷം ₹30,000 വരെ ക്രെഡിറ്റ് പരിധിയുള്ള UPI-ലിങ്ക്ഡ് റുപേ ക്രെഡിറ്റ് കാർഡ്.",
+          "hi": "दूसरी किस्त चुकाने के बाद ₹30,000 तक की क्रेडिट सीमा वाला UPI-लिंक्ड रुपे क्रेडिट कार्ड।"
         }
       ],
       "documents_required": [
@@ -1156,31 +1249,43 @@
         }
       ],
       "source": {
-        "title": "PM SVANidhi official portal",
-        "publisher": "Ministry of Housing and Urban Affairs",
-        "url": "https://pmsvanidhi.mohua.gov.in/",
-        "verified_on": "2026-11-16"
+        "title": "Implementation of PM-SVANidhi Scheme",
+        "publisher": "Press Information Bureau, Government of India",
+        "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=2288503",
+        "verified_on": "2026-11-18"
       },
-      "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "additional_sources": [
+        {
+          "title": "PM SVANidhi completes one year of restructuring: expanding credit, digital inclusion and livelihoods opportunities",
+          "publisher": "Press Information Bureau, Government of India",
+          "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=2303797",
+          "verified_on": "2026-11-18"
+        }
+      ],
+      "verified_on": "2026-11-18",
       "keywords": [
         "street vendor",
         "svanidhi",
         "loan",
         "working capital",
         "urban",
+        "census town",
+        "upi",
         "തെരുവ് വ്യാപാരി",
         "വായ്പ",
+        "സെൻസസ് ടൗൺ",
         "स्ट्रीट वेंडर",
-        "ऋण"
+        "ऋण",
+        "जनगणना नगर"
       ],
       "rule": {
         "any_of": [
           {
             "all_of": [
               "street_vendor",
-              "urban_resident",
-              "no_unpaid_similar_loan",
+              "age_18_or_above",
+              "svanidhi_unique_upi_id",
+              "no_loan_npa_or_written_off",
               "manual_svanidhi_ulb"
             ]
           }
@@ -1326,7 +1431,7 @@
       },
       "description": {
         "en": "IGNOAPS is part of the National Social Assistance Programme. It provides a central monthly pension of ₹200 for beneficiaries aged 60 to 79 and ₹500 for those aged 80 and above. State governments may add a top-up, so the actual amount can be higher.",
-        "ml": "ദേശീയ സാമൂഹിക സഹായ പദ്ധതിയുടെ ഭാഗമാണ് IGNOAPS. 60 മുതൽ 79 വയസ്സ് വരെയുള്ള ഗുണഭോക്താക്കൾക്ക് പ്രതിമാസം ₹200-ഉം 80 വയസ്സിന് മുകളിലുള്ളവർക്ക് ₹500-ഉം കേന്ദ്ര സർക്കാർ നൽകുന്നു. സംസ്ഥാന സർക്കാരുകൾ അധിക തുക നൽകാം, അതിനാൽ യഥാർത്ഥ തുക കൂടുതലായിരിക്കാം.",
+        "ml": "ദേശീയ സാമൂഹിക സഹായ പദ്ധതിയുടെ ഭാഗമാണ് IGNOAPS. 60 മുതൽ 79 വയസ്സ് വരെയുള്ള ഗുണഭോക്താക്കൾക്ക് പ്രതിമാസം ₹200-ഉം 80 വയസ്സോ അതിൽ കൂടുതലോ പ്രായമുള്ളവർക്ക് ₹500-ഉം കേന്ദ്ര സർക്കാർ നൽകുന്നു. സംസ്ഥാന സർക്കാരുകൾ അധിക തുക നൽകാം, അതിനാൽ യഥാർത്ഥ തുക കൂടുതലായിരിക്കാം.",
         "hi": "IGNOAPS राष्ट्रीय सामाजिक सहायता कार्यक्रम का हिस्सा है। यह 60 से 79 वर्ष के लाभार्थियों को ₹200 और 80 वर्ष या अधिक आयु के लोगों को ₹500 की केंद्रीय मासिक पेंशन देती है। राज्य सरकारें अतिरिक्त राशि जोड़ सकती हैं, इसलिए वास्तविक राशि अधिक हो सकती है।"
       },
       "category": "pension",
@@ -1391,10 +1496,17 @@
         "title": "National Social Assistance Programme",
         "publisher": "Department of Rural Development, Ministry of Rural Development",
         "url": "https://nsap.dord.gov.in/",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
-      "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "additional_sources": [
+        {
+          "title": "NSAP frequently asked questions",
+          "publisher": "Department of Rural Development, Ministry of Rural Development",
+          "url": "https://nsap.dord.gov.in/circular.do?method=faq",
+          "verified_on": "2026-11-18"
+        }
+      ],
+      "verified_on": "2026-11-18",
       "keywords": [
         "pension",
         "old age",
@@ -1433,13 +1545,13 @@
       },
       "summary": {
         "en": "Health cover of ₹5 lakh per family per year for secondary and tertiary hospital care, including a universal route for people aged 70 and above.",
-        "ml": "ദ്വിതീയ, ത്രിതീയ തല ആശുപത്രി ചികിത്സയ്ക്ക് കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം ആരോഗ്യ പരിരക്ഷ; 70 വയസ്സിന് മുകളിലുള്ളവർക്ക് സാർവത്രിക വഴിയും.",
+        "ml": "ദ്വിതീയ, ത്രിതീയ തല ആശുപത്രി ചികിത്സയ്ക്ക് കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം ആരോഗ്യ പരിരക്ഷ; 70 വയസ്സോ അതിൽ കൂടുതലോ പ്രായമുള്ളവർക്ക് സാർവത്രിക വഴിയും.",
         "hi": "द्वितीयक और तृतीयक अस्पताल उपचार के लिए प्रति परिवार प्रति वर्ष ₹5 लाख का स्वास्थ्य कवर, 70 वर्ष या अधिक आयु के लिए सार्वभौमिक मार्ग सहित।"
       },
       "description": {
-        "en": "AB PM-JAY provides cashless health cover of ₹5 lakh per family per year for secondary and tertiary hospitalisation. Families identified through SECC 2011 deprivation and occupational criteria are covered, and since 2024 all senior citizens aged 70 and above are eligible irrespective of income. There is no cap on family size, age or gender, and the cover is portable across the country.",
-        "ml": "ദ്വിതീയ, ത്രിതീയ തല ആശുപത്രി പ്രവേശനത്തിന് കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം ക്യാഷ്ലെസ് ആരോഗ്യ പരിരക്ഷ നൽകുന്നു. SECC 2011-ലെ വിഭാഗീയ, തൊഴിൽ മാനദണ്ഡങ്ങളിലൂടെ തിരിച്ചറിഞ്ഞ കുടുംബങ്ങൾക്ക് പരിരക്ഷയുണ്ട്; 2024 മുതൽ 70 വയസ്സോ അതിൽ കൂടുതലോ പ്രായമുള്ള എല്ലാ മുതിർന്ന പൗരന്മാർക്കും വരുമാനഭേദമില്ലാതെ യോഗ്യതയുണ്ട്. കുടുംബ വലിപ്പം, പ്രായം, ലിംഗം എന്നിവയ്ക്ക് പരിധിയില്ല; പരിരക്ഷ രാജ്യവ്യാപകമായി കൈമാറാം.",
-        "hi": "AB PM-JAY द्वितीयक और तृतीयक अस्पताल में भर्ती होने पर प्रति परिवार प्रति वर्ष ₹5 लाख का कैशलेस स्वास्थ्य कवर देती है। SECC 2011 के वंचना और व्यवसाय मानदंडों से चिह्नित परिवार शामिल हैं, और 2024 से 70 वर्ष या अधिक आयु के सभी वरिष्ठ नागरिक आय की परवाह किए बिना पात्र हैं। परिवार के आकार, आयु या लिंग की कोई सीमा नहीं है और कवर देश भर में पोर्टेबल है।"
+        "en": "AB PM-JAY provides cashless health cover of ₹5 lakh per family per year for secondary and tertiary hospitalisation to Indian citizens. The scheme is implemented across all 36 States and Union Territories. It covers 12 crore families identified through SECC 2011 deprivation and occupational criteria, about 37 lakh ASHA, Anganwadi worker and Anganwadi helper families, and all senior citizens aged 70 and above irrespective of socio-economic status. State-specific expansions may add families. There is no cap on family size, age or gender, and the cover is portable across the country.",
+        "ml": "ദ്വിതീയ, ത്രിതീയ തല ആശുപത്രി പ്രവേശനത്തിന് ഇന്ത്യൻ പൗരന്മാർക്ക് കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം ക്യാഷ്ലെസ് ആരോഗ്യ പരിരക്ഷ നൽകുന്നു. 36 സംസ്ഥാനങ്ങളിലും കേന്ദ്രഭരണ പ്രദേശങ്ങളിലും പദ്ധതി നടപ്പാക്കുന്നു. SECC 2011-ലെ വിഭാഗീയ, തൊഴിൽ മാനദണ്ഡങ്ങളിലൂടെ തിരിച്ചറിഞ്ഞ 12 കോടി കുടുംബങ്ങൾ, ഏകദേശം 37 ലക്ഷം ആശാ വർക്കർ, അങ്കണവാടി വർക്കർ, അങ്കണവാടി ഹെൽപ്പർ കുടുംബങ്ങൾ, സാമൂഹ്യ-സാമ്പത്തിക നില പരിഗണിക്കാതെ 70 വയസ്സോ അതിൽ കൂടുതലോ പ്രായമുള്ള എല്ലാ മുതിർന്ന പൗരന്മാർ എന്നിവർക്ക് പരിരക്ഷയുണ്ട്. സംസ്ഥാനങ്ങളുടെ വിപുലീകരണങ്ങൾ കൂടുതൽ കുടുംബങ്ങളെ ഉൾപ്പെടുത്താം. കുടുംബ വലിപ്പം, പ്രായം, ലിംഗം എന്നിവയ്ക്ക് പരിധിയില്ല; പരിരക്ഷ രാജ്യവ്യാപകമായി കൈമാറാം.",
+        "hi": "AB PM-JAY भारतीय नागरिकों को द्वितीयक और तृतीयक अस्पताल में भर्ती के लिए प्रति परिवार प्रति वर्ष ₹5 लाख का कैशलेस स्वास्थ्य कवर देती है। योजना सभी 36 राज्यों और केंद्र शासित प्रदेशों में लागू है। इसमें SECC 2011 के वंचना और व्यवसाय मानदंडों से चिह्नित 12 करोड़ परिवार, लगभग 37 लाख आशा कार्यकर्ता, आंगनवाड़ी कार्यकर्ता और आंगनवाड़ी सहायक परिवार, तथा सामाजिक-आर्थिक स्थिति की परवाह किए बिना 70 वर्ष या अधिक आयु के सभी वरिष्ठ नागरिक शामिल हैं। राज्यों के विस्तार से और परिवार जुड़ सकते हैं। परिवार के आकार, आयु या लिंग की कोई सीमा नहीं है और कवर देश भर में पोर्टेबल है।"
       },
       "category": "health",
       "government_level": "central",
@@ -1463,6 +1575,11 @@
           "en": "People aged 70 and above can enrol irrespective of income, with a distinct card and top-up rules for existing beneficiary families.",
           "ml": "70 വയസ്സോ അതിൽ കൂടുതലോ പ്രായമുള്ളവർക്ക് വരുമാനഭേദമില്ലാതെ ചേരാം; നിലവിലെ ഗുണഭോക്തൃ കുടുംബങ്ങൾക്ക് പ്രത്യേക കാർഡും ടോപ്പ്-അപ്പ് നിയമങ്ങളും.",
           "hi": "70 वर्ष या अधिक आयु के लोग आय की परवाह किए बिना जुड़ सकते हैं; मौजूदा लाभार्थी परिवारों के लिए अलग कार्ड और टॉप-अप नियम।"
+        },
+        {
+          "en": "Cover for about 37 lakh ASHA, Anganwadi worker and Anganwadi helper families.",
+          "ml": "ഏകദേശം 37 ലക്ഷം ആശാ വർക്കർ, അങ്കണവാടി വർക്കർ, അങ്കണവാടി ഹെൽപ്പർ കുടുംബങ്ങൾക്ക് പരിരക്ഷ.",
+          "hi": "लगभग 37 लाख आशा, आंगनवाड़ी कार्यकर्ता और आंगनवाड़ी सहायक परिवारों के लिए कवर।"
         }
       ],
       "documents_required": [
@@ -1503,17 +1620,17 @@
         "title": "Cabinet approves health coverage for all senior citizens aged 70 and above under AB PM-JAY",
         "publisher": "Press Information Bureau, Government of India",
         "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=2053883",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [
         {
-          "title": "Ayushman Bharat PM-JAY — scheme features and SECC criteria",
+          "title": "AB PM-JAY achieves pan-India implementation; now operational across all 36 States/UTs",
           "publisher": "Press Information Bureau, Government of India",
-          "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=1738169",
-          "verified_on": "2026-11-16"
+          "url": "https://pib.gov.in/PressReleasePage.aspx?PRID=2290627",
+          "verified_on": "2026-11-18"
         }
       ],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "health",
         "hospital",
@@ -1531,11 +1648,13 @@
         "any_of": [
           {
             "all_of": [
+              "indian_citizen",
               "age_70_or_above"
             ]
           },
           {
             "all_of": [
+              "indian_citizen",
               "manual_pmjay_secc"
             ]
           }
@@ -1545,24 +1664,24 @@
     {
       "id": "pmay-urban",
       "name": {
-        "en": "Pradhan Mantri Awas Yojana – Urban (PMAY-U)",
-        "ml": "പ്രധാനമന്ത്രി ആവാസ് യോജന – അർബൻ (PMAY-U)",
-        "hi": "प्रधानमंत्री आवास योजना – शहरी (PMAY-U)"
+        "en": "Pradhan Mantri Awas Yojana – Urban 2.0 (PMAY-U 2.0)",
+        "ml": "പ്രധാനമന്ത്രി ആവാസ് യോജന – അർബൻ 2.0 (PMAY-U 2.0)",
+        "hi": "प्रधानमंत्री आवास योजना – शहरी 2.0 (PMAY-U 2.0)"
       },
       "short_name": {
-        "en": "PMAY-U",
-        "ml": "PMAY-U",
-        "hi": "PMAY-U"
+        "en": "PMAY-U 2.0",
+        "ml": "PMAY-U 2.0",
+        "hi": "PMAY-U 2.0"
       },
       "summary": {
-        "en": "Central assistance for pucca houses and housing finance support for eligible urban families.",
-        "ml": "യോഗ്യരായ നഗര കുടുംബങ്ങൾക്ക് പക്കാ വീടുകൾക്കും ഭവന വായ്പ പിന്തുണയ്ക്കും കേന്ദ്ര സഹായം.",
-        "hi": "पात्र शहरी परिवारों के लिए पक्के घर और आवास वित्त सहायता हेतु केंद्रीय सहायता।"
+        "en": "Central assistance for pucca houses and home-loan interest support for eligible urban families under PMAY-U 2.0.",
+        "ml": "PMAY-U 2.0 പ്രകാരം യോഗ്യരായ നഗര കുടുംബങ്ങൾക്ക് പക്കാ വീടുകൾക്കും ഭവന വായ്പ പലിശ പിന്തുണയ്ക്കും കേന്ദ്ര സഹായം.",
+        "hi": "PMAY-U 2.0 के तहत पात्र शहरी परिवारों के लिए पक्के घर और गृह ऋण ब्याज सहायता हेतु केंद्रीय सहायता।"
       },
       "description": {
-        "en": "PMAY-U supports urban families in the EWS, LIG and MIG categories with central assistance for pucca houses through beneficiary-led construction, affordable housing, slum rehabilitation and credit-linked interest subsidy. Beneficiary families must not own a pucca house anywhere in India, and the applicable vertical's income, ownership and female co-ownership rules must be met.",
-        "ml": "EWS, LIG, MIG വിഭാഗങ്ങളിലെ നഗര കുടുംബങ്ങൾക്ക് ഗുണഭോക്തൃ നിർമ്മാണം, താങ്ങാനാവുന്ന ഭവനം, ചേരിപ്പുനരധിവാസം, വായ്പാ പലിശ സബ്സിഡി എന്നിവയിലൂടെ പക്കാ വീടുകൾക്ക് കേന്ദ്ര സഹായം നൽകുന്നു. ഗുണഭോക്തൃ കുടുംബങ്ങൾക്ക് ഇന്ത്യയിൽ എവിടെയും പക്കാ വീട് ഉണ്ടാകരുത്; ബാധകമായ വിഭാഗത്തിന്റെ വരുമാന, ഉടമസ്ഥത, വനിതാ സഹ-ഉടമസ്ഥതാ നിയമങ്ങൾ പാലിക്കണം.",
-        "hi": "PMAY-U EWS, LIG और MIG श्रेणियों के शहरी परिवारों को लाभार्थी-निर्मित आवास, किफ़ायती आवास, झुग्गी पुनर्वास और ऋण-लिंक्ड ब्याज सहायता के माध्यम से पक्के घरों के लिए केंद्रीय सहायता देती है। लाभार्थी परिवार के पास भारत में कहीं भी पक्का घर नहीं होना चाहिए, और लागू वर्टिकल के आय, स्वामित्व तथा महिला सह-स्वामित्व नियम पूरे होने चाहिए।"
+        "en": "PMAY-U 2.0 supports urban families in the EWS, LIG and MIG categories with central assistance for pucca houses through beneficiary-led construction (BLC), affordable housing in partnership (AHP), affordable rental housing (ARH) and interest subsidy (ISS). Annual family income must be up to ₹3 lakh for EWS, ₹6 lakh for LIG or ₹9 lakh for MIG. The family must not own a pucca house anywhere in India and must not have been allotted a house under PMAY-U or another central or state housing scheme in the last 20 years. The house must be owned or co-owned by the female head of the family, subject to the exceptions in the guidelines.",
+        "ml": "EWS, LIG, MIG വിഭാഗങ്ങളിലെ നഗര കുടുംബങ്ങൾക്ക് ഗുണഭോക്തൃ നിർമ്മാണം (BLC), പങ്കാളിത്ത താങ്ങാനാവുന്ന ഭവനം (AHP), താങ്ങാനാവുന്ന വാടക ഭവനം (ARH), പലിശ സബ്സിഡി (ISS) എന്നിവയിലൂടെ പക്കാ വീടുകൾക്ക് PMAY-U 2.0 കേന്ദ്ര സഹായം നൽകുന്നു. EWS-ന് പ്രതിവർഷം ₹3 ലക്ഷം, LIG-ന് ₹6 ലക്ഷം, MIG-ന് ₹9 ലക്ഷം വരെ കുടുംബ വരുമാനം ആകാം. കുടുംബത്തിന് ഇന്ത്യയിൽ എവിടെയും പക്കാ വീട് ഉണ്ടാകരുത്; കഴിഞ്ഞ 20 വർഷത്തിനിടയിൽ PMAY-U അല്ലെങ്കിൽ മറ്റേതെങ്കിലും കേന്ദ്ര/സംസ്ഥാന ഭവന പദ്ധതി പ്രകാരം വീട് അനുവദിച്ചിട്ടുണ്ടാകരുത്. മാർഗ്ഗനിർദ്ദേശത്തിലെ ഒഴിവുകൾക്ക് വിധേയമായി, വീട് കുടുംബത്തിലെ വനിതാ മേധാവിയുടെ ഉടമസ്ഥതയിലോ സഹ-ഉടമസ്ഥതയിലോ ആയിരിക്കണം.",
+        "hi": "PMAY-U 2.0 EWS, LIG और MIG श्रेणियों के शहरी परिवारों को लाभार्थी-निर्मित आवास (BLC), भागीदारी में किफ़ायती आवास (AHP), किफ़ायती किराया आवास (ARH) और ब्याज सहायता (ISS) के माध्यम से पक्के घरों के लिए केंद्रीय सहायता देती है। EWS के लिए वार्षिक पारिवारिक आय ₹3 लाख, LIG के लिए ₹6 लाख और MIG के लिए ₹9 लाख तक होनी चाहिए। परिवार के पास भारत में कहीं भी पक्का घर नहीं होना चाहिए और पिछले 20 वर्षों में PMAY-U या किसी अन्य केंद्रीय या राज्य आवास योजना के तहत घर आवंटित नहीं हुआ होना चाहिए। दिशानिर्देशों के अपवादों के अधीन, घर परिवार की महिला मुखिया के स्वामित्व या सह-स्वामित्व में होना चाहिए।"
       },
       "category": "housing",
       "government_level": "central",
@@ -1573,19 +1692,24 @@
       },
       "benefits": [
         {
-          "en": "Central assistance towards constructing or acquiring a pucca house under the applicable PMAY-U vertical.",
-          "ml": "ബാധകമായ PMAY-U വിഭാഗത്തിൽ പക്കാ വീട് നിർമ്മിക്കാനോ വാങ്ങാനോ കേന്ദ്ര സഹായം.",
-          "hi": "लागू PMAY-U वर्टिकल के तहत पक्का घर बनाने या खरीदने के लिए केंद्रीय सहायता।"
+          "en": "Central assistance for a pucca house under BLC, AHP or ARH, depending on the applicable vertical.",
+          "ml": "ബാധകമായ വിഭാഗമനുസരിച്ച് BLC, AHP അല്ലെങ്കിൽ ARH പ്രകാരം പക്കാ വീടിന് കേന്ദ്ര സഹായം.",
+          "hi": "लागू वर्टिकल के अनुसार BLC, AHP या ARH के तहत पक्के घर के लिए केंद्रीय सहायता।"
         },
         {
-          "en": "Interest subsidy on home loans under the credit-linked subsidy scheme, where applicable.",
-          "ml": "ബാധകമായിടത്ത് വായ്പാ പലിശ സബ്സിഡി പദ്ധതി പ്രകാരം ഭവന വായ്പയ്ക്ക് പലിശ സബ്സിഡി.",
-          "hi": "जहाँ लागू हो, ऋण-लिंक्ड सब्सिडी योजना के तहत गृह ऋण पर ब्याज सहायता।"
+          "en": "Interest subsidy on home loans under ISS, where applicable.",
+          "ml": "ബാധകമായിടത്ത് ISS പ്രകാരം ഭവന വായ്പയ്ക്ക് പലിശ സബ്സിഡി.",
+          "hi": "जहाँ लागू हो, ISS के तहत गृह ऋण पर ब्याज सहायता।"
         },
         {
-          "en": "Houses with the female head of the family as owner or co-owner.",
-          "ml": "കുടുംബത്തിലെ വനിതാ മേധാവി ഉടമയോ സഹ-ഉടമയോ ആയ വീടുകൾ.",
-          "hi": "ऐसे घर जिनमें परिवार की महिला मुखिया मालिक या सह-मालिक हो।"
+          "en": "Houses owned or co-owned by the female head of the family, subject to guideline exceptions.",
+          "ml": "മാർഗ്ഗനിർദ്ദേശത്തിലെ ഒഴിവുകൾക്ക് വിധേയമായി കുടുംബത്തിലെ വനിതാ മേധാവി ഉടമയോ സഹ-ഉടമയോ ആയ വീടുകൾ.",
+          "hi": "दिशानिर्देशों के अपवादों के अधीन, परिवार की महिला मुखिया के स्वामित्व या सह-स्वामित्व वाले घर।"
+        },
+        {
+          "en": "Income bands of up to ₹3 lakh (EWS), ₹6 lakh (LIG) and ₹9 lakh (MIG) a year.",
+          "ml": "പ്രതിവർഷം ₹3 ലക്ഷം (EWS), ₹6 ലക്ഷം (LIG), ₹9 ലക്ഷം (MIG) വരെ വരുമാന പരിധികൾ.",
+          "hi": "सालाना ₹3 लाख (EWS), ₹6 लाख (LIG) और ₹9 लाख (MIG) तक की आय श्रेणियाँ।"
         }
       ],
       "documents_required": [
@@ -1608,18 +1732,28 @@
           "en": "Land or property documents for the applicable vertical",
           "ml": "ബാധകമായ വിഭാഗത്തിനുള്ള ഭൂമി അല്ലെങ്കിൽ വസ്തു രേഖകൾ",
           "hi": "लागू वर्टिकल के लिए भूमि या संपत्ति दस्तावेज़"
+        },
+        {
+          "en": "Proof that no house was allotted in the last 20 years",
+          "ml": "കഴിഞ്ഞ 20 വർഷത്തിനിടയിൽ വീട് അനുവദിച്ചിട്ടില്ലെന്ന തെളിവ്",
+          "hi": "पिछले 20 वर्षों में कोई घर आवंटित न होने का प्रमाण"
+        },
+        {
+          "en": "Female ownership or joint ownership documents",
+          "ml": "വനിതാ ഉടമസ്ഥതയോ സഹ-ഉടമസ്ഥതയോ സംബന്ധിച്ച രേഖകൾ",
+          "hi": "महिला स्वामित्व या संयुक्त स्वामित्व के दस्तावेज़"
         }
       ],
       "application_steps": [
         {
-          "en": "Check the applicable PMAY-U vertical and income category with the urban local body.",
-          "ml": "നഗര തദ്ദേശ സ്ഥാപനത്തിൽ ബാധകമായ PMAY-U വിഭാഗവും വരുമാന വിഭാഗവും പരിശോധിക്കുക.",
-          "hi": "शहरी स्थानीय निकाय से लागू PMAY-U वर्टिकल और आय श्रेणी जाँचें।"
+          "en": "Check the applicable PMAY-U 2.0 vertical (BLC, AHP, ARH or ISS) and income category with the urban local body.",
+          "ml": "നഗര തദ്ദേശ സ്ഥാപനത്തിൽ ബാധകമായ PMAY-U 2.0 വിഭാഗവും (BLC, AHP, ARH അല്ലെങ്കിൽ ISS) വരുമാന വിഭാഗവും പരിശോധിക്കുക.",
+          "hi": "शहरी स्थानीय निकाय से लागू PMAY-U 2.0 वर्टिकल (BLC, AHP, ARH या ISS) और आय श्रेणी जाँचें।"
         },
         {
-          "en": "Apply through the PMAY-U portal or the state/UT implementing agency.",
-          "ml": "PMAY-U പോർട്ടൽ അല്ലെങ്കിൽ സംസ്ഥാന/കേന്ദ്രഭരണ പ്രദേശ നടപ്പാക്കൽ ഏജൻസി വഴി അപേക്ഷിക്കുക.",
-          "hi": "PMAY-U पोर्टल या राज्य/केंद्र शासित प्रदेश क्रियान्वयन एजेंसी के माध्यम से आवेदन करें।"
+          "en": "Apply through the PMAY-U 2.0 portal or the state/UT implementing agency.",
+          "ml": "PMAY-U 2.0 പോർട്ടൽ അല്ലെങ്കിൽ സംസ്ഥാന/കേന്ദ്രഭരണ പ്രദേശ നടപ്പാക്കൽ ഏജൻസി വഴി അപേക്ഷിക്കുക.",
+          "hi": "PMAY-U 2.0 पोर्टल या राज्य/केंद्र शासित प्रदेश क्रियान्वयन एजेंसी के माध्यम से आवेदन करें।"
         },
         {
           "en": "The urban local body verifies eligibility and the validated demand is sanctioned.",
@@ -1628,13 +1762,20 @@
         }
       ],
       "source": {
-        "title": "PMAY-U official portal",
+        "title": "PMAY-U 2.0 operational guidelines",
         "publisher": "Ministry of Housing and Urban Affairs",
-        "url": "https://pmaymis.gov.in/",
-        "verified_on": "2026-11-16"
+        "url": "https://pmay-urban.gov.in/uploads/guidelines/Operational-Guidelines-of-PMAY-U-2.pdf",
+        "verified_on": "2026-11-18"
       },
-      "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "additional_sources": [
+        {
+          "title": "PMAY-U official portal",
+          "publisher": "Ministry of Housing and Urban Affairs",
+          "url": "https://pmaymis.gov.in/",
+          "verified_on": "2026-11-18"
+        }
+      ],
+      "verified_on": "2026-11-18",
       "keywords": [
         "housing",
         "house",
@@ -1654,7 +1795,10 @@
           {
             "all_of": [
               "urban_resident",
+              "annual_income_up_to_900000",
               "manual_pmay_no_pucca_house",
+              "manual_pmay_no_allotment_20_years",
+              "manual_pmay_female_ownership",
               "manual_pmay_vertical"
             ]
           }
@@ -1679,9 +1823,9 @@
         "hi": "पात्र केरल परिवारों के लिए सालाना ₹5 लाख का कैशलेस अस्पताल उपचार।"
       },
       "description": {
-        "en": "KASP is Kerala's health assurance scheme, implemented through the State Health Agency and integrated with AB PM-JAY. It provides up to ₹5 lakh per family per year for secondary and tertiary hospitalisation to more than 42 lakh poor and vulnerable families identified by the state. Benefits are cashless at empanelled hospitals and are not limited by the age or number of family members.",
-        "ml": "സംസ്ഥാന ആരോഗ്യ ഏജൻസി നടപ്പാക്കുന്ന കേരളത്തിന്റെ ആരോഗ്യ പരിരക്ഷാ പദ്ധതിയാണ് KASP; AB PM-JAY-യുമായി സംയോജിപ്പിച്ചിരിക്കുന്നു. സംസ്ഥാനം തിരിച്ചറിഞ്ഞ 42 ലക്ഷത്തിലധികം ദരിദ്ര, ദുർബല കുടുംബങ്ങൾക്ക് ദ്വിതീയ, ത്രിതീയ തല ആശുപത്രി പ്രവേശനത്തിന് കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം വരെ ലഭിക്കും. എംപാനൽ ചെയ്ത ആശുപത്രികളിൽ ക്യാഷ്ലെസ് ചികിത്സ; പ്രായത്തിനോ കുടുംബാംഗങ്ങളുടെ എണ്ണത്തിനോ പരിധിയില്ല.",
-        "hi": "KASP केरल की स्वास्थ्य सुरक्षा योजना है, जिसे राज्य स्वास्थ्य एजेंसी लागू करती है और AB PM-JAY के साथ जोड़ा गया है। राज्य द्वारा चिह्नित 42 लाख से अधिक गरीब और कमज़ोर परिवारों को द्वितीयक और तृतीयक अस्पताल में भर्ती के लिए प्रति परिवार प्रति वर्ष ₹5 लाख तक मिलते हैं। सूचीबद्ध अस्पतालों में कैशलेस उपचार; आयु या परिवार के आकार की कोई सीमा नहीं।"
+        "en": "KASP is Kerala's health assurance scheme, implemented through the State Health Agency and integrated with AB PM-JAY. It provides up to ₹5 lakh per family per year for secondary and tertiary hospitalisation to more than 42 lakh poor and vulnerable families identified by the state. Benefits are cashless at empanelled hospitals. Eligibility is determined by the State Health Agency's list of poor and vulnerable families.",
+        "ml": "സംസ്ഥാന ആരോഗ്യ ഏജൻസി നടപ്പാക്കുന്ന കേരളത്തിന്റെ ആരോഗ്യ പരിരക്ഷാ പദ്ധതിയാണ് KASP; AB PM-JAY-യുമായി സംയോജിപ്പിച്ചിരിക്കുന്നു. സംസ്ഥാനം തിരിച്ചറിഞ്ഞ 42 ലക്ഷത്തിലധികം ദരിദ്ര, ദുർബല കുടുംബങ്ങൾക്ക് ദ്വിതീയ, ത്രിതീയ തല ആശുപത്രി പ്രവേശനത്തിന് കുടുംബത്തിന് പ്രതിവർഷം ₹5 ലക്ഷം വരെ ലഭിക്കും. എംപാനൽ ചെയ്ത ആശുപത്രികളിൽ ക്യാഷ്ലെസ് ചികിത്സ. യോഗ്യത സംസ്ഥാന ആരോഗ്യ ഏജൻസിയുടെ ദരിദ്ര, ദുർബല കുടുംബങ്ങളുടെ പട്ടിക പ്രകാരമാണ്.",
+        "hi": "KASP केरल की स्वास्थ्य सुरक्षा योजना है, जिसे राज्य स्वास्थ्य एजेंसी लागू करती है और AB PM-JAY के साथ जोड़ा गया है। राज्य द्वारा चिह्नित 42 लाख से अधिक गरीब और कमज़ोर परिवारों को द्वितीयक और तृतीयक अस्पताल में भर्ती के लिए प्रति परिवार प्रति वर्ष ₹5 लाख तक मिलते हैं। सूचीबद्ध अस्पतालों में कैशलेस उपचार। पात्रता राज्य स्वास्थ्य एजेंसी की गरीब और कमज़ोर परिवारों की सूची से निर्धारित होती है।"
       },
       "category": "health",
       "government_level": "state",
@@ -1707,9 +1851,9 @@
           "hi": "सूचीबद्ध सरकारी और निजी अस्पतालों में कैशलेस उपचार।"
         },
         {
-          "en": "No age limit or family-size limit for covered families.",
-          "ml": "പരിരക്ഷയുള്ള കുടുംബങ്ങൾക്ക് പ്രായപരിധിയോ കുടുംബ വലിപ്പപരിധിയോ ഇല്ല.",
-          "hi": "कवर किए गए परिवारों के लिए आयु या परिवार के आकार की सीमा नहीं।"
+          "en": "Integrated with AB PM-JAY and accessed through a common Ayushman/KASP card.",
+          "ml": "AB PM-JAY-യുമായി സംയോജിപ്പിച്ച് പൊതുവായ ആയുഷ്മാൻ/KASP കാർഡ് വഴി ഉപയോഗിക്കാം.",
+          "hi": "AB PM-JAY के साथ एकीकृत और साझा आयुष्मान/KASP कार्ड के माध्यम से उपलब्ध।"
         }
       ],
       "documents_required": [
@@ -1750,10 +1894,10 @@
         "title": "State Health Agency, Kerala",
         "publisher": "State Health Agency, Government of Kerala",
         "url": "https://sha.kerala.gov.in/",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "health",
         "kasp",
@@ -1790,14 +1934,14 @@
         "hi": "स्नेहपूर्वम"
       },
       "summary": {
-        "en": "Monthly education assistance for children who have lost a parent and are studying, with higher amounts in higher classes.",
-        "ml": "മാതാവിനെയോ പിതാവിനെയോ നഷ്ടപ്പെട്ട് പഠിക്കുന്ന കുട്ടികൾക്ക് പ്രതിമാസ വിദ്യാഭ്യാസ സഹായം; ഉയർന്ന ക്ലാസുകളിൽ കൂടുതൽ തുക.",
-        "hi": "माता या पिता को खो चुके पढ़ने वाले बच्चों के लिए मासिक शिक्षा सहायता; ऊपरी कक्षाओं में अधिक राशि।"
+        "en": "Monthly education assistance for children who have lost a parent and are studying from pre-school to degree or professional degree courses, with higher amounts in higher classes.",
+        "ml": "മാതാവിനെയോ പിതാവിനെയോ നഷ്ടപ്പെട്ട് പ്രീ-സ്കൂൾ മുതൽ ഡിഗ്രി അല്ലെങ്കിൽ പ്രൊഫഷണൽ ഡിഗ്രി വരെ പഠിക്കുന്ന കുട്ടികൾക്ക് പ്രതിമാസ വിദ്യാഭ്യാസ സഹായം; ഉയർന്ന ക്ലാസുകളിൽ കൂടുതൽ തുക.",
+        "hi": "माता या पिता को खो चुके और प्री-स्कूल से डिग्री या पेशेवर डिग्री तक पढ़ने वाले बच्चों के लिए मासिक शिक्षा सहायता; ऊपरी कक्षाओं में अधिक राशि।"
       },
       "description": {
-        "en": "Snehapoorvam provides monthly financial assistance to children who have lost their father, mother or both parents, so they can continue their education within their family or community. The amount depends on the class: ₹300 for children below 5 and classes I to V, ₹500 for classes VI to X, ₹750 for classes XI and XII, and ₹1,000 for degree and professional degree courses. BPL families are covered, and APL families must meet the annual income limits.",
-        "ml": "പിതാവിനെയോ മാതാവിനെയോ ഇരുവരെയും നഷ്ടപ്പെട്ട കുട്ടികൾ കുടുംബത്തിലോ സമൂഹത്തിലോ തുടർന്ന് പഠിക്കാൻ സ്നേഹപൂർവം പ്രതിമാസ സാമ്പത്തിക സഹായം നൽകുന്നു. തുക ക്ലാസനുസരിച്ച് മാറും: 5 വയസ്സിൽ താഴെയുള്ളവർക്കും ഒന്ന് മുതൽ അഞ്ച് വരെ ക്ലാസുകൾക്കും ₹300; ആറ് മുതൽ പത്ത് വരെ ₹500; പത്തൊന്ന്, പന്ത്രണ്ട് ക്ലാസുകൾക്ക് ₹750; ഡിഗ്രി, പ്രൊഫഷണൽ ഡിഗ്രി കോഴ്സുകൾക്ക് ₹1,000. BPL കുടുംബങ്ങൾക്ക് പരിരക്ഷയുണ്ട്; APL കുടുംബങ്ങൾ വാർഷിക വരുമാന പരിധി പാലിക്കണം.",
-        "hi": "स्नेहपूर्वम उन बच्चों को मासिक आर्थिक सहायता देती है जिन्होंने माता, पिता या दोनों को खो दिया है, ताकि वे परिवार या समुदाय के भीतर पढ़ाई जारी रख सकें। राशि कक्षा पर निर्भर है: 5 वर्ष से कम और कक्षा I से V तक ₹300; कक्षा VI से X तक ₹500; कक्षा XI और XII के लिए ₹750; डिग्री और पेशेवर डिग्री पाठ्यक्रमों के लिए ₹1,000। BPL परिवार शामिल हैं, और APL परिवारों को वार्षिक आय सीमा पूरी करनी होती है।"
+        "en": "Snehapoorvam provides monthly financial assistance to children who have lost their father, mother or both parents, so they can continue their education from the first standard up to degree and professional degree courses. The amount depends on the class: ₹300 for children below 5 and classes I to V, ₹500 for classes VI to X, ₹750 for classes XI and XII, and ₹1,000 for degree and professional degree courses. BPL families are covered, and APL families must have an annual income below ₹20,000 in rural areas or below ₹22,375 in urban areas.",
+        "ml": "പിതാവിനെയോ മാതാവിനെയോ ഇരുവരെയും നഷ്ടപ്പെട്ട കുട്ടികൾ കുടുംബത്തിലോ സമൂഹത്തിലോ തുടർന്ന് പഠിക്കാൻ സ്നേഹപൂർവം പ്രതിമാസ സാമ്പത്തിക സഹായം നൽകുന്നു. ഒന്നാം ക്ലാസ് മുതൽ ഡിഗ്രി, പ്രൊഫഷണൽ ഡിഗ്രി കോഴ്സുകൾ വരെയുള്ള വിദ്യാഭ്യാസത്തിന് ഇത് ലഭിക്കും. തുക ക്ലാസനുസരിച്ച് മാറും: 5 വയസ്സിൽ താഴെയുള്ളവർക്കും ഒന്ന് മുതൽ അഞ്ച് വരെ ക്ലാസുകൾക്കും ₹300; ആറ് മുതൽ പത്ത് വരെ ₹500; പത്തൊന്ന്, പന്ത്രണ്ട് ക്ലാസുകൾക്ക് ₹750; ഡിഗ്രി, പ്രൊഫഷണൽ ഡിഗ്രി കോഴ്സുകൾക്ക് ₹1,000. BPL കുടുംബങ്ങൾക്ക് പരിരക്ഷയുണ്ട്; APL കുടുംബങ്ങൾക്ക് ഗ്രാമപ്രദേശത്ത് പ്രതിവർഷം ₹20,000-ൽ താഴെയും നഗരപ്രദേശത്ത് ₹22,375-ൽ താഴെയും വരുമാനം ഉണ്ടായിരിക്കണം.",
+        "hi": "स्नेहपूर्वम उन बच्चों को मासिक आर्थिक सहायता देती है जिन्होंने माता, पिता या दोनों को खो दिया है, ताकि वे पहली कक्षा से डिग्री और पेशेवर डिग्री पाठ्यक्रमों तक पढ़ाई जारी रख सकें। राशि कक्षा पर निर्भर है: 5 वर्ष से कम और कक्षा I से V तक ₹300; कक्षा VI से X तक ₹500; कक्षा XI और XII के लिए ₹750; डिग्री और पेशेवर डिग्री पाठ्यक्रमों के लिए ₹1,000। BPL परिवार शामिल हैं, और APL परिवारों की वार्षिक आय ग्रामीण क्षेत्र में ₹20,000 से कम या शहरी क्षेत्र में ₹22,375 से कम होनी चाहिए।"
       },
       "category": "education",
       "government_level": "state",
@@ -1876,10 +2020,10 @@
         "title": "Snehapoorvam — Kerala Social Security Mission",
         "publisher": "Kerala Social Security Mission, Government of Kerala",
         "url": "https://socialsecuritymission.gov.in/snehapoorvam/",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "education",
         "child",
@@ -1898,24 +2042,24 @@
           {
             "all_of": [
               "lost_parent",
-              "school_or_preschool",
+              "student_up_to_degree",
               "bpl_household"
             ]
           },
           {
             "all_of": [
               "lost_parent",
-              "school_or_preschool",
+              "student_up_to_degree",
               "rural_resident",
-              "annual_income_up_to_20000"
+              "annual_income_below_20000"
             ]
           },
           {
             "all_of": [
               "lost_parent",
-              "school_or_preschool",
+              "student_up_to_degree",
               "urban_resident",
-              "annual_income_up_to_22375"
+              "annual_income_below_22375"
             ]
           }
         ]
@@ -1939,9 +2083,9 @@
         "hi": "डायलिसिस, प्रत्यारोपण फ़ॉलो-अप, हीमोफ़ीलिया और सिकल सेल रोग के लिए मासिक चिकित्सा सहायता।"
       },
       "description": {
-        "en": "Samaswasam is a Kerala Social Security Mission scheme with four components: ₹1,100 a month for BPL patients who need dialysis at least once a month; ₹1,000 a month for up to five years for kidney or liver transplant follow-up for families with annual income below ₹1 lakh; ₹1,000 a month for haemophilia and related clotting-factor disorders with no income limit; and ₹2,000 a month for non-tribal general-category BPL patients with sickle cell disease.",
-        "ml": "കേരള സോഷ്യൽ സെക്യൂരിറ്റി മിഷന്റെ നാല് ഘടകങ്ങളുള്ള പദ്ധതിയാണ് സമസ്വാസം: മാസത്തിൽ ഒരിക്കലെങ്കിലും ഡയാലിസിസ് ആവശ്യമുള്ള BPL രോഗികൾക്ക് പ്രതിമാസം ₹1,100; വാർഷിക വരുമാനം ₹1 ലക്ഷത്തിൽ താഴെയുള്ള കുടുംബങ്ങളിലെ വൃക്ക/കരൾ മാറ്റിവയ്ക്കൽ തുടർചികിത്സയ്ക്ക് അഞ്ച് വർഷം വരെ പ്രതിമാസം ₹1,000; വരുമാനപരിധിയില്ലാതെ ഹീമോഫീലിയ, അനുബന്ധ രക്തം കട്ടപിടിക്കൽ വൈകല്യങ്ങൾക്ക് പ്രതിമാസം ₹1,000; ആദിവാസിയല്ലാത്ത പൊതു വിഭാഗ BPL സിക്കിൾ സെൽ രോഗികൾക്ക് പ്രതിമാസം ₹2,000.",
-        "hi": "समस्वासम् केरल सामाजिक सुरक्षा मिशन की चार घटकों वाली योजना है: महीने में कम से कम एक बार डायलिसिस की आवश्यकता वाले BPL रोगियों को ₹1,100 प्रति माह; वार्षिक आय ₹1 लाख से कम वाले परिवारों के गुर्दा या यकृत प्रत्यारोपण फ़ॉलो-अप के लिए पाँच वर्ष तक ₹1,000 प्रति माह; बिना आय सीमा के हीमोफ़ीलिया और संबंधित रक्त-थक्का विकारों के लिए ₹1,000 प्रति माह; और गैर-आदिवासी सामान्य वर्ग के BPL सिकल सेल रोगियों को ₹2,000 प्रति माह।"
+        "en": "Samaswasam is a Kerala Social Security Mission scheme with four components: ₹1,100 a month for BPL patients who need dialysis at least once a month; ₹1,000 a month for up to five years from the date of surgery for kidney or liver transplant follow-up, for families with annual income below ₹1 lakh; ₹1,000 a month for haemophilia and related clotting-factor disorders with no income limit; and ₹2,000 a month for non-tribal general-category BPL patients with sickle cell disease.",
+        "ml": "കേരള സോഷ്യൽ സെക്യൂരിറ്റി മിഷന്റെ നാല് ഘടകങ്ങളുള്ള പദ്ധതിയാണ് സമസ്വാസം: മാസത്തിൽ ഒരിക്കലെങ്കിലും ഡയാലിസിസ് ആവശ്യമുള്ള BPL രോഗികൾക്ക് പ്രതിമാസം ₹1,100; വാർഷിക വരുമാനം ₹1 ലക്ഷത്തിൽ താഴെയുള്ള കുടുംബങ്ങളിലെ വൃക്ക/കരൾ മാറ്റിവയ്ക്കൽ തുടർചികിത്സയ്ക്ക് ശസ്ത്രക്രിയാ തീയതി മുതൽ അഞ്ച് വർഷം വരെ പ്രതിമാസം ₹1,000; വരുമാനപരിധിയില്ലാതെ ഹീമോഫീലിയ, അനുബന്ധ രക്തം കട്ടപിടിക്കൽ വൈകല്യങ്ങൾക്ക് പ്രതിമാസം ₹1,000; ആദിവാസിയല്ലാത്ത പൊതു വിഭാഗ BPL സിക്കിൾ സെൽ രോഗികൾക്ക് പ്രതിമാസം ₹2,000.",
+        "hi": "समस्वासम् केरल सामाजिक सुरक्षा मिशन की चार घटकों वाली योजना है: महीने में कम से कम एक बार डायलिसिस की आवश्यकता वाले BPL रोगियों को ₹1,100 प्रति माह; वार्षिक आय ₹1 लाख से कम वाले परिवारों के गुर्दा या यकृत प्रत्यारोपण फ़ॉलो-अप के लिए शल्य चिकित्सा की तारीख से पाँच वर्ष तक ₹1,000 प्रति माह; बिना आय सीमा के हीमोफ़ीलिया और संबंधित रक्त-थक्का विकारों के लिए ₹1,000 प्रति माह; और गैर-आदिवासी सामान्य वर्ग के BPL सिकल सेल रोगियों को ₹2,000 प्रति माह।"
       },
       "category": "health",
       "government_level": "state",
@@ -1962,9 +2106,9 @@
           "hi": "BPL राशन कार्ड वाले डायलिसिस रोगियों को ₹1,100 प्रति माह।"
         },
         {
-          "en": "₹1,000 per month for kidney or liver transplant follow-up, for up to five years.",
-          "ml": "വൃക്ക/കരൾ മാറ്റിവയ്ക്കൽ തുടർചികിത്സയ്ക്ക് അഞ്ച് വർഷം വരെ പ്രതിമാസം ₹1,000.",
-          "hi": "गुर्दा या यकृत प्रत्यारोपण फ़ॉलो-अप के लिए पाँच वर्ष तक ₹1,000 प्रति माह।"
+          "en": "₹1,000 per month for kidney or liver transplant follow-up, for up to five years from the date of surgery.",
+          "ml": "ശസ്ത്രക്രിയാ തീയതി മുതൽ അഞ്ച് വർഷം വരെ വൃക്ക/കരൾ മാറ്റിവയ്ക്കൽ തുടർചികിത്സയ്ക്ക് പ്രതിമാസം ₹1,000.",
+          "hi": "शल्य चिकित्सा की तारीख से पाँच वर्ष तक गुर्दा या यकृत प्रत्यारोपण फ़ॉलो-अप के लिए ₹1,000 प्रति माह।"
         },
         {
           "en": "₹1,000 per month for haemophilia and related disorders.",
@@ -2020,10 +2164,10 @@
         "title": "Samaswasam — Kerala Social Security Mission",
         "publisher": "Kerala Social Security Mission, Government of Kerala",
         "url": "https://socialsecuritymission.gov.in/samaswasam/",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "health",
         "dialysis",
@@ -2048,7 +2192,8 @@
           {
             "all_of": [
               "annual_income_below_100000",
-              "transplant_patient"
+              "transplant_patient",
+              "transplant_within_5_years"
             ]
           },
           {
@@ -2201,9 +2346,9 @@
         "hi": "कासरगोड के एंडोसल्फ़ान प्रभावित परिवारों के लिए मासिक और शिक्षा सहायता।"
       },
       "description": {
-        "en": "Snehasanthwanam is a relief scheme for Endosulfan victims in Kasaragod. Bedridden victims receive ₹2,200 a month, or ₹1,700 if they already receive a ₹300 disability pension; other victims on the district list receive ₹1,200 a month. Children of affected families receive education assistance ranging from ₹2,000 to ₹4,000 depending on their class.",
-        "ml": "കാസർകോട്ടെ എൻഡോസൾഫാൻ ബാധിതർക്കുള്ള ആശ്വാസ പദ്ധതിയാണ് സ്നേഹസാന്ത്വനം. കിടപ്പുരോഗികൾക്ക് പ്രതിമാസം ₹2,200; ₹300 വൈകല്യ പെൻഷൻ ലഭിക്കുന്നവർക്ക് ₹1,700; ജില്ലാ പട്ടികയിലെ മറ്റ് ബാധിതർക്ക് പ്രതിമാസം ₹1,200. ബാധിത കുടുംബങ്ങളിലെ കുട്ടികൾക്ക് ക്ലാസനുസരിച്ച് ₹2,000 മുതൽ ₹4,000 വരെ വിദ്യാഭ്യാസ സഹായം.",
-        "hi": "स्नेहसांत्वनम् कासरगोड के एंडोसल्फ़ान पीड़ितों के लिए राहत योजना है। बिस्तर पर पड़े पीड़ितों को ₹2,200 प्रति माह, या ₹300 विकलांगता पेंशन पाने वालों को ₹1,700; जिला सूची के अन्य पीड़ितों को ₹1,200 प्रति माह। प्रभावित परिवारों के बच्चों को कक्षा के अनुसार ₹2,000 से ₹4,000 तक शिक्षा सहायता।"
+        "en": "Snehasanthwanam is a relief scheme for Endosulfan victims in Kasaragod. Bedridden victims receive ₹2,200 a month, or ₹1,700 if they already receive a ₹300 disability pension; other victims on the district list receive ₹1,200 a month. Children of affected families receive education assistance ranging from ₹2,000 to ₹4,000 depending on their class. The ₹700 caregiver allowance sometimes mentioned alongside this scheme is a separate benefit under the special Aswasakiranam scheme, not a Snehasanthwanam payment.",
+        "ml": "കാസർകോട്ടെ എൻഡോസൾഫാൻ ബാധിതർക്കുള്ള ആശ്വാസ പദ്ധതിയാണ് സ്നേഹസാന്ത്വനം. കിടപ്പുരോഗികൾക്ക് പ്രതിമാസം ₹2,200; ₹300 വൈകല്യ പെൻഷൻ ലഭിക്കുന്നവർക്ക് ₹1,700; ജില്ലാ പട്ടികയിലെ മറ്റ് ബാധിതർക്ക് പ്രതിമാസം ₹1,200. ബാധിത കുടുംബങ്ങളിലെ കുട്ടികൾക്ക് ക്ലാസനുസരിച്ച് ₹2,000 മുതൽ ₹4,000 വരെ വിദ്യാഭ്യാസ സഹായം. ഈ പദ്ധതിയോടൊപ്പം പരാമർശിക്കുന്ന ₹700 പരിചരണ ഭത്ത ഈ പദ്ധതിയുടെ ഭാഗമല്ല; പ്രത്യേക ആശ്വാസകിരണം പദ്ധതിയിലെ വേറിട്ട ആനുകൂല്യമാണ്.",
+        "hi": "स्नेहसांत्वनम् कासरगोड के एंडोसल्फ़ान पीड़ितों के लिए राहत योजना है। बिस्तर पर पड़े पीड़ितों को ₹2,200 प्रति माह, या ₹300 विकलांगता पेंशन पाने वालों को ₹1,700; जिला सूची के अन्य पीड़ितों को ₹1,200 प्रति माह। प्रभावित परिवारों के बच्चों को कक्षा के अनुसार ₹2,000 से ₹4,000 तक शिक्षा सहायता। इस योजना के साथ कभी-कभी उल्लिखित ₹700 देखभाल भत्ता अलग विशेष आश्वासकिरणम योजना के तहत मिलने वाला लाभ है, स्नेहसांत्वनम् का भुगतान नहीं।"
       },
       "category": "welfare",
       "government_level": "state",
@@ -2282,10 +2427,10 @@
         "title": "Snehasanthwanam — Kerala Social Security Mission",
         "publisher": "Kerala Social Security Mission, Government of Kerala",
         "url": "https://socialsecuritymission.gov.in/snehasanthwanam/",
-        "verified_on": "2026-11-16"
+        "verified_on": "2026-11-18"
       },
       "additional_sources": [],
-      "verified_on": "2026-11-16",
+      "verified_on": "2026-11-18",
       "keywords": [
         "endosulfan",
         "kasaragod",

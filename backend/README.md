@@ -136,7 +136,7 @@ python -m ruff check .
 python -m ruff format --check .
 ```
 
-The 139 tests cover:
+The 150 tests cover:
 
 - health, readiness, system info, CORS and the 404/error contracts;
 - dataset schema, unique ids, rule references, translation keys and dates;

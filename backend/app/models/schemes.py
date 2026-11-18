@@ -44,6 +44,7 @@ ConditionOperator = Literal[
 EducationLevel = Literal[
     "below_school",
     "school_or_college",
+    "degree_or_professional",
     "completed_degree",
     "not_studying",
 ]
@@ -82,7 +83,10 @@ PROFILE_FIELD_TYPES: dict[str, str] = {
     "landholding": "bool",
     "institutional_landholder": "bool",
     "income_tax_payer": "bool",
+    "ever_income_tax_payer": "bool",
     "government_employee": "bool",
+    "excluded_government_job": "bool",
+    "constitutional_post_holder": "bool",
     "registered_professional": "bool",
     "monthly_pension": "int",
     "bank_account": "bool",
@@ -95,10 +99,13 @@ PROFILE_FIELD_TYPES: dict[str, str] = {
     "duplicate_enrolment": "bool",
     "willing_manual_work": "bool",
     "street_vendor": "bool",
+    "unique_upi_id": "bool",
+    "loan_npa_or_written_off": "bool",
     "lost_parent": "bool",
     "education_level": "education",
     "dialysis_patient": "bool",
     "transplant_patient": "bool",
+    "years_since_transplant": "int",
     "hemophilia_patient": "bool",
     "sickle_cell_patient": "bool",
 }
@@ -109,6 +116,7 @@ _FIELD_VALUES: dict[str, set[str]] = {
     "education": {
         "below_school",
         "school_or_college",
+        "degree_or_professional",
         "completed_degree",
         "not_studying",
     },
@@ -411,7 +419,10 @@ class EligibilityRequest(BaseModel):
     landholding: bool | None = None
     institutional_landholder: bool | None = None
     income_tax_payer: bool | None = None
+    ever_income_tax_payer: bool | None = None
     government_employee: bool | None = None
+    excluded_government_job: bool | None = None
+    constitutional_post_holder: bool | None = None
     registered_professional: bool | None = None
     monthly_pension: int | None = Field(default=None, ge=0, le=1_000_000)
     bank_account: bool | None = None
@@ -424,10 +435,13 @@ class EligibilityRequest(BaseModel):
     duplicate_enrolment: bool | None = None
     willing_manual_work: bool | None = None
     street_vendor: bool | None = None
+    unique_upi_id: bool | None = None
+    loan_npa_or_written_off: bool | None = None
     lost_parent: bool | None = None
     education_level: EducationLevel | None = None
     dialysis_patient: bool | None = None
     transplant_patient: bool | None = None
+    years_since_transplant: int | None = Field(default=None, ge=0, le=100)
     hemophilia_patient: bool | None = None
     sickle_cell_patient: bool | None = None
 

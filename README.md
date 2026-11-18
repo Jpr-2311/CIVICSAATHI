@@ -6,10 +6,10 @@ A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
 into clear, verifiable guidance in English, Malayalam or Hindi.
 
-> **Build status: Day 2 of 7 complete.** The foundation, live telemetry, a
-> verified 15-scheme catalogue and a deterministic eligibility engine are
-> working. Document intelligence and the RAG assistant are clearly marked as
-> previews rather than shipped as mocks.
+> **Build status: Day 2.1 of 7 complete.** The foundation, live telemetry, a
+> corrected and re-verified 15-scheme catalogue and a deterministic eligibility
+> engine are working. Document intelligence and the RAG assistant are clearly
+> marked as previews rather than shipped as mocks.
 
 Built for **NxtWave IDEA//FORGE — Civic Pulse track**.
 
@@ -38,11 +38,11 @@ CIVICSAATHI AI takes the opposite approach:
 | Workspace | Dashboard shell, sidebar, mobile drawer, live/preview labels, 404 page |
 | Scheme catalogue | Search, nine category filters, central/state filters, pagination, loading/empty/error states |
 | Scheme detail | Full verified record with benefits, documents, steps, conditions and official sources |
-| Eligibility | Optional 29-field form, tri-state answers, deterministic results and per-condition explanations |
-| Data layer | 15 curated schemes, 45 reusable conditions, all source-linked and validated by Pydantic |
+| Eligibility | Optional 34-field form, tri-state answers, deterministic results and per-condition explanations |
+| Data layer | 15 curated schemes, 53 reusable conditions (44 profile, 9 manual), all source-linked and validated by Pydantic |
 | Backend | FastAPI app with typed settings, CORS, logging, lifespan state and consistent error envelopes |
 | Failure states | Skeletons, offline banner, retry actions, 404 handling and stale-data protection |
-| Quality | 139 backend tests passing; Ruff clean; Oxlint clean; production frontend build succeeds |
+| Quality | 150 backend tests passing; Ruff clean; Oxlint clean; production frontend build succeeds |
 
 Document intelligence and the assistant remain clearly labelled previews. They
 do not pretend to be functional yet.
@@ -101,7 +101,7 @@ eligibility pages are available at `/app/schemes` and `/app/eligibility`.
                             │
               ┌─────────────▼──────────────────────────────┐
               │ data/sample_schemes/schemes.json           │
-              │ 15 schemes · 45 conditions · verified      │
+              │ 15 schemes · 53 conditions · verified      │
               └────────────────────────────────────────────┘
 ```
 
@@ -139,7 +139,7 @@ CIVICSAATHI-AI/
 │   │   ├── routes/                # health, system, schemes, eligibility
 │   │   ├── services/              # responses, rules engine, readiness
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── tests/                     # 139 API, dataset and engine tests
+│   ├── tests/                     # 150 API, dataset and engine tests
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── README.md
@@ -156,7 +156,7 @@ CIVICSAATHI-AI/
 │   ├── public/
 │   └── README.md
 ├── data/sample_schemes/
-│   ├── schemes.json               # 15 verified schemes and 45 conditions
+│   ├── schemes.json               # 15 verified schemes and 53 conditions
 │   └── README.md                  # dataset, rule and source policy
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -322,7 +322,7 @@ npm run lint
 npm run build
 ```
 
-Current Day 2 result: **139/139 backend tests pass**, Ruff lint and format are
+Current Day 2.1 result: **150/150 backend tests pass**, Ruff lint and format are
 clean, Oxlint is clean and the Vite production build completes. Screenshots
 were verified at 1440 px and 390 px in all three languages with zero horizontal
 overflow.

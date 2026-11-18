@@ -5,9 +5,10 @@ deterministic eligibility engine. It is read by `SchemeRepository`, validated by
 Pydantic at load time, and served by `GET /api/v1/schemes` and
 `GET /api/v1/schemes/{id}`.
 
-**Dataset version:** 2 · **Curated and verified:** 16 November 2026
-**Contents:** 15 schemes (10 central, 5 Kerala) · 45 reusable conditions
-(38 profile-checked, 7 manual)
+**Dataset version:** 3 · **Curated and verified:** 16 November 2026 ·
+**Corrected and re-verified:** 18 November 2026
+**Contents:** 15 schemes (10 central, 5 Kerala) · 53 reusable conditions
+(44 profile-checked, 9 manual)
 
 ---
 
@@ -52,7 +53,7 @@ eligibility decision.
 | `mgnrega` | Mahatma Gandhi National Rural Employment Guarantee Scheme (MGNREGS) | central | employment | — |
 | `ignoaps` | Indira Gandhi National Old Age Pension Scheme (IGNOAPS) | central | pension | — |
 | `pm-jay` | Ayushman Bharat Pradhan Mantri Jan Arogya Yojana (AB PM-JAY) | central | health | SECC / state list route |
-| `pmay-urban` | Pradhan Mantri Awas Yojana – Urban (PMAY-U) | central | housing | Pucca house and vertical checks |
+| `pmay-urban` | Pradhan Mantri Awas Yojana – Urban 2.0 (PMAY-U 2.0) | central | housing | Pucca house, 20-year allotment, female ownership and vertical checks |
 | `kasp` | Karunya Arogya Suraksha Padhathi (KASP) | state | health | State beneficiary list |
 | `snehapoorvam` | Snehapoorvam | state | education | — |
 | `samaswasam` | Samaswasam | state | health | — |
@@ -69,9 +70,9 @@ NFKC-normalised, case-insensitive search.
 
 ```json
 {
-  "version": 2,
-  "updated_at": "2026-11-16",
-  "note": "Curated on 2026-11-16 …",
+  "version": 3,
+  "updated_at": "2026-11-18",
+  "note": "Curated on 2026-11-16 and corrected on 2026-11-18 …",
   "conditions": { "<condition_id>": { … } },
   "schemes": [ { … } ]
 }
@@ -96,10 +97,10 @@ NFKC-normalised, case-insensitive search.
     "title": "…",
     "publisher": "…",
     "url": "https://…",
-    "verified_on": "2026-11-16"
+    "verified_on": "2026-11-18"
   },
-  "additional_sources": [ { "title": "…", "publisher": "…", "url": "https://…", "verified_on": "2026-11-16" } ],
-  "verified_on": "2026-11-16",
+  "additional_sources": [ { "title": "…", "publisher": "…", "url": "https://…", "verified_on": "2026-11-18" } ],
+  "verified_on": "2026-11-18",
   "keywords": ["…"],
   "rule": { "any_of": [ { "all_of": ["condition_id", "…"] } ] }
 }
@@ -199,6 +200,7 @@ domain. A URL must match a listed domain exactly or be a subdomain of it.
 | `nrega.dord.gov.in` | MGNREGA programme site, Department of Rural Development |
 | `nsap.dord.gov.in` | National Social Assistance Programme site |
 | `pib.gov.in` | Official Government of India press releases |
+| `pmay-urban.gov.in` | PMAY-U 2.0 operational guidelines, Ministry of Housing and Urban Affairs |
 | `pmaymis.gov.in` | PMAY-U management information system |
 | `sha.kerala.gov.in` | Kerala State Health Agency (KASP) |
 | `socialsecuritymission.gov.in` | Kerala Social Security Mission (four state schemes) |
@@ -228,8 +230,11 @@ For each scheme, the editor:
 5. Ran the dataset tests, which re-validate every record, URL, condition
    reference, rule route and translation key.
 
-All 15 records carry `verified_on: "2026-11-16"`. Re-verify before extending the
-dataset; do not copy a date forward without reopening the source.
+Twelve corrected records carry `verified_on: "2026-11-18"`. The three records
+left unchanged by the Day 2.1 audit (`pm-vishwakarma`, `mgnrega` and
+`vayomithram`) retain their original `verified_on: "2026-11-16"`. Re-verify
+before extending the dataset; do not copy a date forward without reopening the
+source.
 
 ---
 

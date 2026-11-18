@@ -1,7 +1,7 @@
 # Architecture — CIVICSAATHI AI
 
-**Status:** Day 2 complete · **Version:** 0.2.0
-**Last updated:** 17 November 2026
+**Status:** Day 2.1 complete · **Version:** 0.2.0
+**Last updated:** 18 November 2026
 
 This document explains how the system is put together, which boundaries exist
 for later milestones, and why the trust-critical decisions were made. It is the
@@ -174,9 +174,9 @@ verification date and primary source link.
 record sections, manual-condition warning, primary and additional sources,
 content note and disclaimer, plus an eligibility call to action.
 
-**Eligibility.** A 29-field optional form grouped into five sections. Numeric
-fields are validated locally (whole numbers, age 0–120, non-negative money) and
-invalid values block submission. Blank answers are omitted from the payload so
+**Eligibility.** A 34-field optional form grouped into five sections. Numeric
+fields are validated locally (whole numbers, age 0–120, non-negative money,
+years since transplant 0–100) and invalid values block submission. Blank answers are omitted from the payload so
 the engine records `unknown` rather than guessing. Boolean questions use a
 tri-state yes / no / not sure control. Results show outcome counts and filters,
 per-condition pass/fail/unknown explanations, per-route combination status,
@@ -448,12 +448,15 @@ protocol are documented in
 ### 8.2 Dataset summary
 
 - 15 schemes: 10 central, 5 Kerala.
-- 45 reusable conditions: 38 profile-checked, 7 manual.
+- 53 reusable conditions: 44 profile-checked, 9 manual (dataset version 3).
 - Nine categories represented: agriculture, business, education, employment,
   health, housing, insurance, pension, welfare.
 - Every scheme, benefit, document, step and condition exists in English,
   Malayalam and Hindi.
-- Every record was verified on 16 November 2026 against the sources below.
+- Twelve records were corrected and re-verified on 18 November 2026; the three
+  unchanged records (PM Vishwakarma, MGNREGS, Vayomithram) retain their original
+  16 November 2026 verification date. See
+  [`DAY_2_1_DATASET_AUDIT.md`](DAY_2_1_DATASET_AUDIT.md).
 
 | Scheme | Primary source domain |
 | --- | --- |
@@ -462,11 +465,11 @@ protocol are documented in
 | Atal Pension Yojana | `pfrda.org.in`, `jansuraksha.gov.in` |
 | PMJJBY | `jansuraksha.gov.in` |
 | PMSBY | `jansuraksha.gov.in` |
-| PM SVANidhi | `pmsvanidhi.mohua.gov.in` |
+| PM SVANidhi | `pib.gov.in` |
 | MGNREGS | `nrega.dord.gov.in`, `nregaplus.nic.in` |
 | IGNOAPS | `nsap.dord.gov.in` |
-| AB PM-JAY | `pib.gov.in`, `sha.kerala.gov.in` |
-| PMAY-U | `pmaymis.gov.in` |
+| AB PM-JAY | `pib.gov.in` |
+| PMAY-U 2.0 | `pmay-urban.gov.in`, `pmaymis.gov.in` |
 | KASP | `sha.kerala.gov.in` |
 | Snehapoorvam | `socialsecuritymission.gov.in` |
 | Samaswasam | `socialsecuritymission.gov.in` |

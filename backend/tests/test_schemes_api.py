@@ -31,7 +31,7 @@ def test_catalogue_returns_a_validated_page(client: TestClient) -> None:
     assert first["government_level"] == "central"
     assert first["state"] is None
     assert first["benefit_highlights"]
-    assert first["verified_on"] == "2026-11-16"
+    assert first["verified_on"] == "2026-11-18"
     assert first["source"]["url"].startswith("https://")
 
 
@@ -180,12 +180,12 @@ def test_scheme_detail_contains_the_full_verified_record(
     assert body["source"]["url"] == "https://pmkisan.gov.in/"
     assert len(body["additional_sources"]) == 1
     assert body["additional_sources"][0]["url"].startswith("https://pmkisan.gov.in/")
-    assert body["verified_on"] == "2026-11-16"
+    assert body["verified_on"] == "2026-11-18"
     assert body["content_note"]
     assert body["disclaimer"]
 
     conditions = {condition["id"]: condition for condition in body["conditions"]}
-    assert len(conditions) == 6
+    assert len(conditions) == 7
     assert conditions["landholding_farmer"]["manual"] is False
     assert all(not condition["manual"] for condition in body["conditions"])
 

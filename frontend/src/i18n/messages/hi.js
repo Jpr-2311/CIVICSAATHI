@@ -601,13 +601,26 @@ const hi = {
         label: 'गरीबी रेखा से नीचे (BPL) परिवार',
         hint: 'जैसा राशन कार्ड में दर्ज है।',
       },
-      income_tax_payer: { label: 'मैं या मेरा परिवार आयकर देता है' },
+      income_tax_payer: {
+        label: 'मैंने या परिवार ने पिछले निर्धारण वर्ष में आयकर दिया',
+      },
+      ever_income_tax_payer: {
+        label: 'मैं कभी भी आयकर दाता रहा हूँ (APY बाधा)',
+      },
       bank_account: { label: 'मेरे नाम का बैंक खाता' },
       monthly_pension: {
         label: 'मासिक पेंशन (₹)',
         placeholder: 'नहीं हो तो 0 लिखें',
       },
       government_employee: { label: 'सरकारी कर्मचारी' },
+      excluded_government_job: {
+        label:
+          'परिवार का कोई सदस्य सेवारत या सेवानिवृत्त सरकारी, सार्वजनिक उपक्रम, स्वायत्त निकाय या स्थानीय निकाय कर्मचारी है (एमटीएस, क्लास IV, ग्रुप D छूट प्राप्त हैं)',
+      },
+      constitutional_post_holder: {
+        label:
+          'परिवार का कोई सदस्य संवैधानिक पद धारक, मंत्री, सांसद, विधायक, एमएलसी, महापौर या जिला पंचायत अध्यक्ष है या रहा है',
+      },
       registered_professional: {
         label:
           'पंजीकृत पेशेवर (डॉक्टर, इंजीनियर, वकील, चार्टर्ड अकाउंटेंट)',
@@ -637,13 +650,25 @@ const hi = {
         label: 'अकुशल शारीरिक श्रम करने को तैयार',
       },
       street_vendor: { label: 'मैं रेहड़ी-पटरी विक्रेता हूँ' },
+      unique_upi_id: {
+        label: 'मेरे पास मान्य UPI आईडी है जो किसी अन्य लाभार्थी की नहीं है',
+      },
+      loan_npa_or_written_off: {
+        label: 'मौजूदा ऋण खाता एनपीए है या बट्टे खाते में डाला गया है',
+      },
       lost_parent: { label: 'माता-पिता में से किसी का निधन हो चुका है' },
       education_level: {
         label: 'वर्तमान शिक्षा',
         placeholder: 'शिक्षा स्तर चुनें',
       },
       dialysis_patient: { label: 'मरीज़ को डायलिसिस चाहिए' },
-      transplant_patient: { label: 'मरीज़ को अंग प्रत्यारोपण चाहिए' },
+      transplant_patient: {
+        label: 'मरीज़ का गुर्दा या यकृत प्रत्यारोपण हो चुका है',
+      },
+      years_since_transplant: {
+        label: 'प्रत्यारोपण हुए कितने वर्ष',
+        placeholder: '0 से 100 लिखें',
+      },
       hemophilia_patient: { label: 'मरीज़ को हीमोफ़ीलिया है' },
       sickle_cell_patient: { label: 'मरीज़ को सिकल सेल रोग है' },
     },
@@ -664,6 +689,7 @@ const hi = {
       education: {
         below_school: 'स्कूल जाने की उम्र से कम',
         school_or_college: 'स्कूल या कॉलेज में',
+        degree_or_professional: 'डिग्री या पेशेवर डिग्री पाठ्यक्रम में',
         completed_degree: 'डिग्री पूरी की',
         not_studying: 'पढ़ाई नहीं कर रहे',
       },
@@ -675,6 +701,7 @@ const hi = {
       age: '0 से 120 के बीच पूर्ण संख्या लिखें।',
       annual_income: '₹0 या अधिक की पूर्ण संख्या लिखें।',
       monthly_pension: '₹0 या अधिक की पूर्ण संख्या लिखें।',
+      years_since_transplant: '0 से 100 के बीच पूर्ण संख्या लिखें।',
     },
     errorTitle: 'पात्रता जाँच नहीं चल सकी',
     errorCopy:
