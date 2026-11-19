@@ -6,13 +6,16 @@ A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
 into clear, verifiable guidance in English, Malayalam or Hindi.
 
-> **Build status: Day 6 deployment preparation complete; not yet deployed.** The
+> **Build status: Day 7 final verification complete; not deployed.** The local
 > foundation, live telemetry, a corrected and re-verified 15-scheme catalogue, a
 > deterministic eligibility engine, a live document-intelligence pipeline and an
-> evidence-grounded multilingual assistant are connected into one trilingual
-> journey. Production configuration, persistent storage guards and deployment
-> instructions are ready for Render and Vercel. Automated tests mock Gemini by
-> default; a live Gemini call is a separate opt-in check, not a default test.
+> evidence-gated multilingual assistant are connected into one trilingual
+> journey. Final verification exercised a real PM-KISAN government PDF end to
+> end in English, Malayalam and Hindi, plus restart persistence, deletion and
+> operation without Gemini. **Live Gemini generation is not verified:** all four
+> final attempts returned `504 gemini_timeout`, so no live answer is claimed. No
+> Render or Vercel deployment exists. See
+> [`docs/FINAL_VERIFICATION.md`](docs/FINAL_VERIFICATION.md).
 
 Built for **NxtWave IDEA//FORGE — Civic Pulse track**.
 
@@ -36,7 +39,7 @@ CIVICSAATHI AI takes the opposite approach:
 
 ## What works today
 
-| Area | Day 5 state |
+| Area | Verified state (Day 7) |
 | --- | --- |
 | Marketing site | Responsive landing page with trilingual answer preview, problem framing, workflow and trust sections |
 | Workspace | Dashboard shell, sidebar, mobile drawer, live module labels, 404 page |
@@ -46,40 +49,60 @@ CIVICSAATHI AI takes the opposite approach:
 | Data layer | 15 curated schemes, 53 reusable conditions (44 profile, 9 manual), all source-linked and validated by Pydantic |
 | Document intelligence | Secure PDF upload, PyMuPDF extraction, page-aware overlapping chunks, multilingual embeddings, persistent ChromaDB search with page citations |
 | Backend | FastAPI app with typed settings, CORS, logging, lifespan state, threadpool document work and consistent error envelopes |
-| Assistant | Gemini-backed answers grounded in retrieved passages, EN/ML/HI output, validated backend citations and honest insufficient-evidence states |
+| Assistant | Gemini-backed answers grounded in retrieved passages, EN/ML/HI output, backend-built citations and honest insufficient-evidence states. Live provider generation was not verified on Day 7 (four `504 gemini_timeout` responses); safe failure states were verified. |
+| No-Gemini mode | Separate backend process reported `gemini=not_configured`; schemes and document listing stayed available and assistant requests returned safe `503 assistant_not_configured` |
+| Manual end-to-end | Real 12-page PM-KISAN PDF produced 33 chunks; EN/ML/HI search each returned 5 page-9 passages; restart persistence, deletion and deletion persistence verified |
 | Connected journey | Real dashboard counts, scheme→eligibility context, indexed document→assistant handoff, source inspection and language-preserving navigation |
 | Failure states | Skeletons, honest unavailable totals, stale-context recovery, offline banner, retry actions, 404 handling, upload progress and assistant timeout/error states |
-| Quality | 247 backend tests passing (3 gated), 23 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
+| Quality | 247 backend tests passing (3 gated skipped), 23 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
 
-Document intelligence is live in English, Malayalam and Hindi. The assistant is
-also live in all three languages once `GEMINI_API_KEY` is configured: it retrieves
-first, answers only from that evidence, and says when the documents do not contain
-the answer. Without a key, `/api/v1/assistant/ask` returns a safe `503` while
-document search keeps working. See [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md)
-for the assistant design and
-[`docs/DAY_5_INTEGRATION.md`](docs/DAY_5_INTEGRATION.md) for the connected
-journey, validation results and live-check limitations. The backend also starts
-without a key; readiness reports `not_configured` and the assistant returns a
-safe `assistant_not_configured` response. See
-[`docs/DEMO_READINESS.md`](docs/DEMO_READINESS.md) for the hackathon checklist and
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the deployment runbook.
+Document intelligence is verified in English, Malayalam and Hindi against a
+genuine PM-KISAN guidelines PDF: upload, page-aware indexing, retrieval and page
+metadata all worked, and survived a backend restart. The assistant is
+evidence-gated: retrieval happens first, citations are built by the backend, and
+the system returns an explicit insufficient-evidence response when the documents
+do not support an answer. On Day 7, four live generation attempts timed out
+(`504 gemini_timeout`); live answer quality therefore remains unverified, while
+the safe failure path and the no-evidence path were verified. Without a key,
+`/api/v1/assistant/ask` returns a safe `503` while scheme and document features
+keep working.
+
+Read the final evidence record in
+[`docs/FINAL_VERIFICATION.md`](docs/FINAL_VERIFICATION.md), the presentation
+narrative in
+[`docs/HACKATHON_PRESENTATION.md`](docs/HACKATHON_PRESENTATION.md), the timed demo
+in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md), the assistant design in
+[`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md) and the deployment runbook in
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Screenshots
+
+These captures are from the **local Day 7 production build** with the real API and
+a genuine PM-KISAN PDF indexed. They are not production screenshots. The desktop
+viewport is 1440 × 1000; mobile is 390 × 844.
 
 | Landing page | Workspace dashboard |
 | :---: | :---: |
 | [![Landing page](docs/screenshots/landing-desktop.png)](docs/screenshots/landing-desktop.png) | [![Workspace dashboard](docs/screenshots/dashboard-desktop.png)](docs/screenshots/dashboard-desktop.png) |
 
-These screenshots show the foundation shell. The live catalogue, eligibility and
-document pages are available at `/app/schemes`, `/app/eligibility` and
-`/app/documents`.
+| Scheme discovery | Eligibility results |
+| :---: | :---: |
+| [![Scheme discovery](docs/screenshots/schemes-desktop.png)](docs/screenshots/schemes-desktop.png) | [![Eligibility results](docs/screenshots/eligibility-results-desktop.png)](docs/screenshots/eligibility-results-desktop.png) |
+
+| Official document library | Grounded assistant (empty state) |
+| :---: | :---: |
+| [![Document library with indexed PM-KISAN PDF](docs/screenshots/documents-library-desktop.png)](docs/screenshots/documents-library-desktop.png) | [![Assistant workspace](docs/screenshots/assistant-desktop.png)](docs/screenshots/assistant-desktop.png) |
+
+| Malayalam workspace |
+| :---: |
+| [![Malayalam dashboard](docs/screenshots/dashboard-ml-desktop.png)](docs/screenshots/dashboard-ml-desktop.png) |
 
 <details>
 <summary>Mobile views (390 px)</summary>
 
-| Landing page | Workspace dashboard |
-| :---: | :---: |
-| ![Landing page on mobile](docs/screenshots/landing-mobile.png) | ![Workspace dashboard on mobile](docs/screenshots/dashboard-mobile.png) |
+| Landing page | Workspace dashboard | Scheme discovery |
+| :---: | :---: | :---: |
+| ![Landing page on mobile](docs/screenshots/landing-mobile.png) | ![Workspace dashboard on mobile](docs/screenshots/dashboard-mobile.png) | ![Scheme discovery on mobile](docs/screenshots/schemes-mobile.png) |
 
 </details>
 
@@ -178,10 +201,16 @@ question → validation → language + optional document filter
   capped; the request has a timeout and errors map to safe `detail`/`code`
   envelopes. Nothing is persisted.
 
-Day 6 prepared the app for production but did not perform a deployment. Actual
-Render/Vercel setup and smoke tests still require account credentials.
-Supabase persistence remains deferred; the validated JSON repository and
-ChromaDB store are the active providers and the seams for a future database.
+Day 7 completed final verification and product polish without changing the
+architecture. A real official PDF was exercised end to end, EN/ML/HI retrieval
+was confirmed, restart persistence and deletion passed, and a separate backend
+without a Gemini key remained usable. Live generation was attempted four times
+and returned `504 gemini_timeout`; it is therefore not claimed as verified. Day 6
+prepared the app for production but no Render/Vercel deployment was performed,
+because deployment credentials and account access were unavailable. Supabase
+persistence remains deferred; the validated JSON repository and ChromaDB store
+are the active providers and the seams for a future database. The full evidence
+record is in [`docs/FINAL_VERIFICATION.md`](docs/FINAL_VERIFICATION.md).
 
 Read the grounded-generation design in
 [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md), the full design in
@@ -238,7 +267,10 @@ CIVICSAATHI-AI/
 │   ├── DAY_4_GEMINI.md
 │   ├── DAY_5_INTEGRATION.md
 │   ├── DEMO_READINESS.md
+│   ├── DEMO_SCRIPT.md
 │   ├── DEPLOYMENT.md
+│   ├── FINAL_VERIFICATION.md
+│   ├── HACKATHON_PRESENTATION.md
 │   └── screenshots/
 └── README.md
 ```
@@ -289,12 +321,14 @@ In a second terminal:
 ```powershell
 cd frontend
 npm install
-Copy-Item .env.example .env.local   # optional; defaults to port 8000
+Copy-Item .env.example .env.local   # sets VITE_API_BASE_URL=http://127.0.0.1:8000
 npm run dev
 ```
 
-Open <http://localhost:5173>. The dashboard polls the API and shows an honest
-offline state if the backend is not running.
+Copying the example file is required for local development: the browser bundle
+has **no localhost fallback**, so without `VITE_API_BASE_URL` the app reports
+`api_base_url_missing`. Open <http://localhost:5173>. The dashboard polls the API
+and shows an honest offline state if the backend is not running.
 
 ### 3. Verify
 
@@ -354,10 +388,13 @@ Frontend variables live in `frontend/.env.local` (copied from `.env.example`).
 | `DOCUMENT_SEARCH_MAX_TOP_K` | Backend | Default 20 |
 | `DOCUMENT_SEARCH_MAX_DISTANCE` | Backend | Default 1.0 cosine distance |
 | `EMBEDDING_MODEL_NAME` | Backend | Defaults to `intfloat/multilingual-e5-small` |
-| `VITE_API_BASE_URL` | Frontend | Public API origin; defaults to `http://127.0.0.1:8000` |
+| `VITE_API_BASE_URL` | Frontend | Public API origin, e.g. `http://127.0.0.1:8000`; no built-in fallback — copy `.env.example` to `.env.local` |
 
-`VITE_*` values are embedded in the browser bundle. Only public configuration
-belongs there. All secrets and storage paths stay in the backend environment.
+`VITE_API_BASE_URL` must be an **origin only** (`scheme://host[:port]`). Do not
+append `/api/v1`: the client adds that prefix itself, and including it produces a
+doubled `/api/v1/api/v1` path and a `404`. A trailing slash is harmless. `VITE_*`
+values are embedded in the browser bundle, so only public configuration belongs
+there. All secrets and storage paths stay in the backend environment.
 
 ## API
 
@@ -465,16 +502,20 @@ npm test
 npm run build
 ```
 
-Current Day 6 result: **247 backend tests pass** with 3 gated integration tests
+Current Day 7 result: **247 backend tests pass** with 3 gated integration tests
 skipped, **23 frontend tests pass**, Ruff and Oxlint are clean, EN/ML/HI catalogs
-have identical 640-key sets and the Vite production build completes. Backend
-startup without Gemini, production CORS guards, persistent path resolution and
-deployment configuration are covered by tests. A production build configured
-with `VITE_API_BASE_URL=https://api.example.com` contained no localhost
-reference. Gemini is mocked in the default suite; live checks remain blocked by
-intermittent outbound TLS timeouts, so live validation is not claimed as
-passing. No prompt, answer or key is logged. Day 6 made no claim of manual
-browser verification or deployment success.
+have identical 640-key sets and the Vite production build completes (with a
+628 kB chunk-size warning). Backend startup without Gemini, production CORS
+guards, persistent path resolution and deployment configuration are covered by
+tests. A production build configured with
+`VITE_API_BASE_URL=https://api.example.com` contained no localhost reference.
+Gemini is mocked in the default suite; four live checks timed out with
+`504 gemini_timeout`, so live generation is **not** claimed as passing. No
+prompt, answer or key is logged. Day 7 also performed manual browser and API
+checks on a real PM-KISAN PDF — upload, EN/ML/HI retrieval, restart persistence,
+deletion and no-Gemini operation — recorded in
+[`docs/FINAL_VERIFICATION.md`](docs/FINAL_VERIFICATION.md). No deployment was
+performed.
 
 ## Roadmap
 
@@ -486,13 +527,16 @@ browser verification or deployment success.
 | 4 | Evidence-backed assistant | Complete: Gemini RAG in EN/ML/HI with validated page citations |
 | 5 | Trilingual journey | Complete: connected EN/ML/HI journey with honest states and source inspection |
 | 6 | Production readiness | Prepared: env/CORS/storage guards, Vercel SPA config and deployment runbook |
-| 7 | Deploy & demo | Vercel + Render deployment, demo script, submission assets |
+| 7 | Final verification & demo | Complete locally: real PDF EN/ML/HI journey, UI polish, presentation and demo assets. Deployment and live Gemini remain unverified |
 
 ## Deployment notes
 
 The project is **not deployed yet**. Deployment is prepared but requires
-Render/Vercel credentials and account access. See
-[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the complete runbook.
+Render/Vercel credentials and account access. On Day 7, `vercel whoami` failed
+with "The specified token is not valid", the Render CLI was unavailable, and
+neither `VERCEL_TOKEN` nor `RENDER_API_KEY` was present in the environment; no
+production URL exists. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the
+complete runbook and the Day 7 status notes.
 
 - **Frontend (Vercel):** root `frontend`, build `npm run build`, output `dist`,
   environment `VITE_API_BASE_URL=https://<backend-host>`. `frontend/vercel.json`

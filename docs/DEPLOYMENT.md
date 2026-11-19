@@ -2,7 +2,7 @@
 
 **Target architecture:** Vercel (React/Vite frontend) · Render (FastAPI backend) · persistent disk on Render (ChromaDB, PDFs, JSON registry) · Gemini key on the backend only.
 
-**Status:** deployment-ready configuration; **no live deployment was performed** while writing this document.
+**Status:** deployment-ready configuration; **no live deployment was performed**. Last reviewed 19 November 2026 (Day 7 final verification): `vercel whoami` failed with "The specified token is not valid", the Render CLI is unavailable, and neither `VERCEL_TOKEN` nor `RENDER_API_KEY` is present in the environment. There is no production URL. Local persistence and the manual journey were verified on a temporary disk-backed store, not on Render. See [`FINAL_VERIFICATION.md`](FINAL_VERIFICATION.md).
 
 ## Status labels
 
@@ -10,7 +10,7 @@
 | --- | --- |
 | **Implemented** | Code or configuration exists in this repository. |
 | **Automated-tested** | Covered by a repository test or validation command that was run. |
-| **Manually-tested** | A person performed the step and recorded the result. None below were manually tested during Day 6. |
+| **Manually-tested** | A person performed the step and recorded the result. Day 7 added local browser/API verification of the journey below, but no deployed smoke test from section 9 was run. |
 | **Requires deployment credentials** | Render/Vercel account access, DNS, disks or dashboard environment variables are needed. |
 | **Not yet verified** | Cannot be claimed until an actual deployment and smoke test are performed. |
 
@@ -23,8 +23,8 @@
 | Vercel SPA rewrites | **Implemented**, **Not yet verified on Vercel** |
 | Render deployment | **Requires deployment credentials**, **Not yet verified** |
 | Vercel deployment | **Requires deployment credentials**, **Not yet verified** |
-| Live Gemini answers | **Not yet verified** (outbound TLS timeouts in the development environment) |
-| Browser/manual smoke tests | **Not manually tested** |
+| Live Gemini answers | **Not yet verified** — four Day 7 attempts returned `504 gemini_timeout`; safe failure and no-evidence paths passed |
+| Browser/manual smoke tests | **Locally verified on Day 7** (desktop/mobile screenshots, real PDF journey); **not** run against deployed URLs |
 
 ---
 
@@ -173,7 +173,7 @@ CORS uses explicit methods (`GET`, `POST`, `DELETE`, `OPTIONS`) and headers (`Ac
 
 ## 6. Gemini configuration
 
-**Status:** **Implemented** · **Automated-tested for configured/unconfigured startup** · **Live answers not yet verified**
+**Status:** **Implemented** · **Automated-tested for configured/unconfigured startup** · **Live answers not yet verified** (four Day 7 calls returned `504 gemini_timeout`; see [`FINAL_VERIFICATION.md`](FINAL_VERIFICATION.md))
 
 - Store `GEMINI_API_KEY` only in the Render service environment.
 - Leave it unset for deployments that do not need generated answers.
@@ -313,7 +313,7 @@ Record results outside source control. Do not paste API keys, full request heade
 - Validation errors omit submitted values to avoid reflecting identifiers such as Aadhaar numbers.
 - Exceptions return safe envelopes; stack traces are logged server-side only.
 - No authentication, chat history, Supabase, OCR or new database was introduced in this phase.
-- A tracked-file secret scan and `git diff --check` were run before the Day 6 commit; results are recorded in the final report.
+- A tracked-file secret scan and `git diff --check` were run before the Day 7 commit; no secrets or whitespace errors were found. Results are recorded in [`FINAL_VERIFICATION.md`](FINAL_VERIFICATION.md) and the final report.
 
 ---
 
@@ -325,9 +325,13 @@ Record results outside source control. Do not paste API keys, full request heade
 - Vercel project creation, Root Directory configuration and `VITE_API_BASE_URL`.
 - Exact production domains for `CORS_ORIGINS`.
 
-**Manually-tested:**
+**Manually-tested (local, Day 7):**
 
-- None during Day 6. All smoke tests in section 9 are instructions for the deployer.
+- Desktop (1440 × 1000) and mobile (390 × 844) browser checks with exact viewport emulation; no page-level horizontal overflow.
+- Real PM-KISAN PDF upload/indexing, EN/ML/HI page-cited retrieval, restart persistence, deletion and no-Gemini operation against a local backend.
+- CORS allow/deny and rejection of a fake PDF. Recorded in [`FINAL_VERIFICATION.md`](FINAL_VERIFICATION.md).
+
+Still not manually tested: every smoke test in section 9 against real Render/Vercel URLs — those remain instructions for the deployer.
 
 **Not yet verified:**
 

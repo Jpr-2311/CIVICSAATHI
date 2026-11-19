@@ -45,3 +45,5 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+# Editor local history can contain copies of ignored .env files.
+.history/
