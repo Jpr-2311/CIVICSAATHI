@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 import pytest
+from google.genai import types
 
 from app.services.assistant_errors import (
     AssistantNotConfiguredError,
@@ -92,7 +93,11 @@ def test_generate_returns_text_and_bounds_output():
     assert config.system_instruction == "rules"
     assert config.max_output_tokens == 900
     assert config.response_mime_type == "application/json"
-    assert config.response_schema == GENERATION_SCHEMA
+    assert isinstance(config.response_schema, types.Schema)
+    assert (
+        config.response_schema.model_dump(mode="json", by_alias=True, exclude_none=True)
+        == GENERATION_SCHEMA
+    )
     assert captured["model"] == "gemini-2.5-flash"
 
 

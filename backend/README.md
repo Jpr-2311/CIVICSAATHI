@@ -238,8 +238,12 @@ Secrets are `SecretStr` values and are never returned by any endpoint. Storage
 paths are server-side only. `passage: ` and `query: ` prefixes and normalized
 vectors follow the multilingual-e5 contract. The assistant defaults are bounded;
 `ASSISTANT_MIN_SIMILARITY` is a configurable heuristic, not a calibrated measure
-of factual truth. Full Day 4 configuration and validation details are in
-[`docs/DAY_4_GEMINI.md`](../docs/DAY_4_GEMINI.md).
+of factual truth. `GEMINI_API_KEY` is optional at startup: without it,
+readiness reports `not_configured` and `/api/v1/assistant/ask` returns
+`503 assistant_not_configured` while every other module stays available.
+Full Day 4 configuration and validation details are in
+[`docs/DAY_4_GEMINI.md`](../docs/DAY_4_GEMINI.md); the Day 5.1 manual checklist
+is in [`docs/DEMO_READINESS.md`](../docs/DEMO_READINESS.md).
 
 ## Tests and lint
 
@@ -249,7 +253,7 @@ python -m ruff check app tests
 python -m ruff format --check app tests
 ```
 
-**233 unit/API tests pass and 3 integration tests are skipped by default.**
+**235 unit/API tests pass and 3 integration tests are skipped by default.**
 The gated tests are opt-in so no routine test depends on a model download or a
 paid Gemini call:
 
@@ -284,7 +288,9 @@ The suite covers:
   generation configuration (without a network call);
 - Day 5 cross-module contracts: scheme context never changes the eligibility
   payload, indexed-only filtering and `needs_ocr`, document-filtered citations,
-  stale selection recovery and fabricated citation-metadata rejection.
+  stale selection recovery and fabricated citation-metadata rejection;
+- Day 5.1 real lifespan startup with and without a Gemini key, plus the typed
+  SDK schema serialisation used by the live provider.
 
 Unit tests use deterministic injectable `FakeEmbedder` and `FakeGemini` peers
 with tiny in-memory PDFs, so they need neither the neural model nor a network.

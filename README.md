@@ -48,7 +48,7 @@ CIVICSAATHI AI takes the opposite approach:
 | Assistant | Gemini-backed answers grounded in retrieved passages, EN/ML/HI output, validated backend citations and honest insufficient-evidence states |
 | Connected journey | Real dashboard counts, scheme→eligibility context, indexed document→assistant handoff, source inspection and language-preserving navigation |
 | Failure states | Skeletons, honest unavailable totals, stale-context recovery, offline banner, retry actions, 404 handling, upload progress and assistant timeout/error states |
-| Quality | 233 backend tests passing (3 gated), 20 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
+| Quality | 235 backend tests passing (3 gated), 20 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
 
 Document intelligence is live in English, Malayalam and Hindi. The assistant is
 also live in all three languages once `GEMINI_API_KEY` is configured: it retrieves
@@ -57,7 +57,10 @@ the answer. Without a key, `/api/v1/assistant/ask` returns a safe `503` while
 document search keeps working. See [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md)
 for the assistant design and
 [`docs/DAY_5_INTEGRATION.md`](docs/DAY_5_INTEGRATION.md) for the connected
-journey, validation results and live-check limitations.
+journey, validation results and live-check limitations. The backend also starts
+without a key; readiness reports `not_configured` and the assistant returns a
+safe `assistant_not_configured` response. See
+[`docs/DEMO_READINESS.md`](docs/DEMO_READINESS.md) for the hackathon checklist.
 
 ## Screenshots
 
@@ -209,7 +212,7 @@ CIVICSAATHI-AI/
 │   │   ├── routes/                # health, system, schemes, eligibility, documents, assistant
 │   │   ├── services/              # rules, readiness, document pipeline, Gemini, assistant RAG
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── tests/                     # 233 unit/API tests + gated integration tests
+│   ├── tests/                     # 235 unit/API tests + gated integration tests
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── README.md
@@ -232,6 +235,7 @@ CIVICSAATHI-AI/
 │   ├── ARCHITECTURE.md
 │   ├── DAY_4_GEMINI.md
 │   ├── DAY_5_INTEGRATION.md
+│   ├── DEMO_READINESS.md
 │   └── screenshots/
 └── README.md
 ```
@@ -458,14 +462,14 @@ npm test
 npm run build
 ```
 
-Current Day 5 result: **233 backend tests pass** with 3 gated integration
+Current Day 5.1 result: **235 backend tests pass** with 3 gated integration
 tests skipped, **20 frontend tests pass**, Ruff and Oxlint are clean, EN/ML/HI
 catalogs have identical 640-key sets and the Vite production build completes.
 Gemini is mocked in the default suite; the two opt-in live checks were retried
-but blocked by an outbound TLS handshake timeout, so live validation is not
-claimed as passing. No prompt, answer or key is logged. Screenshots of the
-Day 1/2 shell were verified at 1440 px and 390 px in all three languages with
-zero horizontal overflow; the new Day 5 layouts are covered by tests and a
+but remained blocked by intermittent outbound TLS timeouts, so live validation
+is not claimed as passing. No prompt, answer or key is logged. Screenshots of
+the Day 1/2 shell were verified at 1440 px and 390 px in all three languages
+with zero horizontal overflow; Day 5/5.1 layouts are covered by tests and a
 production build, not manual browser inspection.
 
 ## Roadmap

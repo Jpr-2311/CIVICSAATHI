@@ -44,8 +44,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         collection_name=settings.document_collection_name,
     )
     app.state.document_service = DocumentService(app.state.document_store, settings)
+    # The key is optional. Use the same guard as readiness so startup stays up
+    # without a key and the assistant reports assistant_not_configured instead.
+    api_key = (
+        settings.gemini_api_key.get_secret_value()
+        if settings.gemini_configured
+        else None
+    )
     app.state.gemini_service = GeminiService(
-        api_key=settings.gemini_api_key.get_secret_value(),
+        api_key=api_key,
         model=settings.gemini_model,
         timeout=settings.assistant_request_timeout_seconds,
         max_output_tokens=settings.assistant_max_output_tokens,

@@ -1,7 +1,7 @@
 # Architecture — CIVICSAATHI AI
 
-**Status:** Day 5 complete · **Version:** 0.2.0
-**Last updated:** 18 November 2026
+**Status:** Day 5.1 stabilisation · **Version:** 0.2.0
+**Last updated:** 19 November 2026
 
 This document explains how the system is put together, which boundaries exist
 for later milestones, and why the trust-critical decisions were made. It is the
@@ -978,17 +978,20 @@ tiny in-memory PDFs, so they need no model download or network.
 | `tests/test_assistant_service.py` | RAG pipeline, evidence gate, citation validation, retry, injection |
 | `tests/test_assistant_api.py` | Ask endpoint, validation, filters, error codes and no history |
 | `tests/test_day5_integration.py` | Cross-module scheme/eligibility and document/assistant contracts, indexed filtering, stale selection and fabricated-metadata rejection |
+| `tests/test_startup_configuration.py` | Real lifespan startup with and without the optional Gemini key |
 | `tests/integration/test_gemini_integration.py` | Gated LIVE Gemini answer and document-filtered multilingual checks |
 
-Result: **233 passed, 3 skipped** in the default run (the gated real-model
+Result: **235 passed, 3 skipped** in the default run (the gated real-model
 document test and the two gated live Gemini tests). With
 `CIVICSAATHI_RUN_MODEL_TESTS=1`, the document test uses
 `intfloat/multilingual-e5-small` from the local Hugging Face cache. With
 `CIVICSAATHI_RUN_GEMINI_TESTS=1` and a real key, the separate Gemini file checks
 a live grounded answer and a document-filtered Malayalam answer; neither gated
-test is needed for the default suite. Day 5 retried the live gate, but outbound
-TLS handshakes timed out before a provider response, so live validation is
-recorded as unavailable rather than passing.
+test is needed for the default suite. Day 5.1 fixed a typed-schema serialisation
+defect found during the live probe, but repeated live checks still timed out in
+the outbound TLS handshake or read before a provider response, so live
+validation is recorded as unavailable rather than passing. See
+[`DEMO_READINESS.md`](DEMO_READINESS.md) for the safe connectivity findings.
 
 Also enforced:
 

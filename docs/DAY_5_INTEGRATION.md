@@ -8,10 +8,10 @@ eligibility, document and assistant endpoints are reused. The work is a frontend
 integration and polish layer plus cross-module contract tests and documentation.
 
 > **Validation honesty:** the default automated suite mocks Gemini with
-> `FakeGemini`. A separate opt-in live Gemini check was retried during Day 5
-> validation but could not complete because outbound TLS handshakes timed out
-> before the provider responded. This document distinguishes mocked validation
-> from that unavailable live check throughout.
+> `FakeGemini`. A separate opt-in live Gemini check was retried during Day 5 and
+> Day 5.1 validation but could not complete because outbound TLS handshakes or
+> reads timed out before a provider response. This document distinguishes mocked
+> validation from that unavailable live check throughout.
 
 ---
 
@@ -203,14 +203,16 @@ npm run build
 
 Final Day 5 results:
 
-- Backend: **233 passed, 3 skipped** (the three skips are the gated real-model
-  document test and the two gated live Gemini tests).
+- Backend: **235 passed, 3 skipped** (the three skips are the gated real-model
+  document test and the two gated live Gemini tests; the two extra passing tests
+  are the Day 5.1 startup regression).
 - Ruff check and format check: clean.
 - Frontend: **20 tests passed** across three files; Oxlint clean; Vite
   production build succeeds (with the pre-existing informational chunk-size
   warning).
 - Translation parity: 640 flattened keys in each of EN, ML and HI.
-- Live Gemini: attempted twice, blocked by outbound TLS timeout; not passing.
+- Live Gemini: attempted repeatedly across Day 5 and Day 5.1, blocked by
+  intermittent outbound TLS/read timeouts; not passing.
 
 No manual browser verification was performed for the new Day 5 layouts. The
 frontend tests assert mobile-first class composition and route/state behaviour;
@@ -232,9 +234,11 @@ they do not replace visual inspection at 1440, 1280, 768 or 390 px.
 
 ---
 
-## 10. Known out-of-scope observation
+## 10. Day 5.1 startup hardening update
 
-The existing `backend/app/main.py` startup path calls `.get_secret_value()` on
-the Gemini secret when it is entirely absent. Day 5 did not change startup
-behaviour; the configured development environment used for validation has a key
-present. Treat this as a pre-existing hardening item, not a Day 5 regression.
+The Day 5 observation about unconditional `.get_secret_value()` was resolved in
+Day 5.1. Startup now uses the existing `gemini_configured` guard, so the backend
+starts without a key, readiness reports `not_configured`, and assistant requests
+return `assistant_not_configured`. Configured-key behaviour is unchanged.
+See [`DEMO_READINESS.md`](DEMO_READINESS.md) for the manual procedure and
+`tests/test_startup_configuration.py` for regression coverage.

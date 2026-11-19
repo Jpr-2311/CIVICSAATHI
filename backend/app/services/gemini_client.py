@@ -156,7 +156,10 @@ class GeminiService:
         config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             response_mime_type="application/json",
-            response_schema=GENERATION_SCHEMA,
+            # SDK 3.5.0 serializes a raw dict with snake_case schema fields,
+            # which the API rejects. The typed model preserves the same rules
+            # with the expected camelCase aliases.
+            response_schema=types.Schema(**GENERATION_SCHEMA),
             temperature=0,
             max_output_tokens=self.max_output_tokens,
             thinking_config=types.ThinkingConfig(thinking_budget=0),
