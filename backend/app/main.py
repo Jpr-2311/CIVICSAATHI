@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.core.logging import configure_logging
-from app.database.document_store import DocumentStore
+from app.database.document_store import DocumentStore, DocumentStoreError
 from app.database.scheme_repository import (
     DatasetUnavailableError,
     SchemeRepository,
@@ -38,11 +38,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Initialise process-level state once, and clean up on shutdown."""
     app.state.started_at = datetime.now(UTC)
     app.state.scheme_repository = SchemeRepository(settings.scheme_dataset_path)
-    app.state.document_store = DocumentStore(
-        storage_dir=settings.document_storage_dir,
-        chroma_dir=settings.chroma_persist_dir,
-        collection_name=settings.document_collection_name,
-    )
+    try:
+        app.state.document_store = DocumentStore(
+            storage_dir=settings.document_storage_dir,
+            chroma_dir=settings.chroma_persist_dir,
+            collection_name=settings.document_collection_name,
+        )
+    except DocumentStoreError as exc:
+        logger.critical("Persistent document storage is unavailable: %s", exc)
+        raise RuntimeError(
+            "Persistent document storage is unavailable. Check the configured "
+            "PERSISTENT_DATA_DIR, CHROMA_PERSIST_DIR and DOCUMENT_STORAGE_DIR."
+        ) from exc
     app.state.document_service = DocumentService(app.state.document_store, settings)
     # The key is optional. Use the same guard as readiness so startup stays up
     # without a key and the assistant reports assistant_not_configured instead.
@@ -69,6 +76,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.environment,
         settings.api_prefix,
     )
+    logger.info("Document storage: %s", settings.document_storage_dir)
+    logger.info("Chroma persistence: %s", settings.chroma_persist_dir)
     yield
     logger.info("Shutting down %s", settings.app_name)
 
@@ -90,7 +99,7 @@ app.add_middleware(
     allow_origins=settings.allowed_origins,
     allow_credentials=False,
     allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Accept", "Content-Type"],
 )
 
 app.include_router(health.router, prefix=settings.api_prefix)

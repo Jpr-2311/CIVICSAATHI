@@ -1,10 +1,13 @@
 import axios from 'axios'
 
+import { normalizeApiBaseUrl } from './apiConfig'
+
 export const API_PREFIX = '/api/v1'
 
-export const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
-).replace(/\/+$/, '')
+// Production must set VITE_API_BASE_URL to the Render API origin. There is
+// intentionally no localhost fallback in browser bundles.
+export const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
+export const isApiBaseConfigured = Boolean(apiBaseUrl)
 
 const api = axios.create({
   baseURL: apiBaseUrl,
@@ -87,6 +90,13 @@ async function request(
   path,
   { method = 'get', params, data, signal, onUploadProgress, timeout } = {},
 ) {
+  if (import.meta.env.PROD && !isApiBaseConfigured) {
+    throw new ApiError(
+      'The CIVICSAATHI API base URL is not configured. Set VITE_API_BASE_URL to the backend origin and rebuild.',
+      { code: 'api_base_url_missing' },
+    )
+  }
+
   try {
     const response = await api.request({
       url: path,

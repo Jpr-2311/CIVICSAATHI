@@ -6,12 +6,13 @@ A multilingual civic intelligence assistant for Kerala. CIVICSAATHI AI turns
 scattered government schemes, eligibility rules and official notification PDFs
 into clear, verifiable guidance in English, Malayalam or Hindi.
 
-> **Build status: Day 5 of 7 complete.** The foundation, live telemetry, a
-> corrected and re-verified 15-scheme catalogue, a deterministic eligibility
-> engine, a live document-intelligence pipeline and an evidence-grounded
-> multilingual assistant are now connected into one trilingual journey.
-> Automated tests mock Gemini by default; a live Gemini call is a separate
-> opt-in check, not a default test.
+> **Build status: Day 6 deployment preparation complete; not yet deployed.** The
+> foundation, live telemetry, a corrected and re-verified 15-scheme catalogue, a
+> deterministic eligibility engine, a live document-intelligence pipeline and an
+> evidence-grounded multilingual assistant are connected into one trilingual
+> journey. Production configuration, persistent storage guards and deployment
+> instructions are ready for Render and Vercel. Automated tests mock Gemini by
+> default; a live Gemini call is a separate opt-in check, not a default test.
 
 Built for **NxtWave IDEA//FORGE — Civic Pulse track**.
 
@@ -48,7 +49,7 @@ CIVICSAATHI AI takes the opposite approach:
 | Assistant | Gemini-backed answers grounded in retrieved passages, EN/ML/HI output, validated backend citations and honest insufficient-evidence states |
 | Connected journey | Real dashboard counts, scheme→eligibility context, indexed document→assistant handoff, source inspection and language-preserving navigation |
 | Failure states | Skeletons, honest unavailable totals, stale-context recovery, offline banner, retry actions, 404 handling, upload progress and assistant timeout/error states |
-| Quality | 235 backend tests passing (3 gated), 20 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
+| Quality | 247 backend tests passing (3 gated), 23 frontend tests, Ruff/Oxlint clean, 640-key EN/ML/HI parity, production frontend build succeeds |
 
 Document intelligence is live in English, Malayalam and Hindi. The assistant is
 also live in all three languages once `GEMINI_API_KEY` is configured: it retrieves
@@ -60,7 +61,8 @@ for the assistant design and
 journey, validation results and live-check limitations. The backend also starts
 without a key; readiness reports `not_configured` and the assistant returns a
 safe `assistant_not_configured` response. See
-[`docs/DEMO_READINESS.md`](docs/DEMO_READINESS.md) for the hackathon checklist.
+[`docs/DEMO_READINESS.md`](docs/DEMO_READINESS.md) for the hackathon checklist and
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the deployment runbook.
 
 ## Screenshots
 
@@ -176,10 +178,10 @@ question → validation → language + optional document filter
   capped; the request has a timeout and errors map to safe `detail`/`code`
   envelopes. Nothing is persisted.
 
-Remaining milestones: hardening and evaluation (Day 6), deployment and demo
-(Day 7). Supabase persistence is deferred;
-the validated JSON repository and ChromaDB store are the active providers and
-the seams for a future database.
+Day 6 prepared the app for production but did not perform a deployment. Actual
+Render/Vercel setup and smoke tests still require account credentials.
+Supabase persistence remains deferred; the validated JSON repository and
+ChromaDB store are the active providers and the seams for a future database.
 
 Read the grounded-generation design in
 [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md), the full design in
@@ -198,7 +200,7 @@ dataset policy in
 | Eligibility | Pure-Python three-valued rule evaluator, data-driven DNF rules |
 | Documents (Day 3) | PyMuPDF, sentence-transformers `intfloat/multilingual-e5-small`, ChromaDB, python-multipart |
 | AI (Day 4) | Official `google-genai` SDK, evidence-first RAG, structured JSON output |
-| Deployment (planned) | Vercel (frontend), Render (backend) |
+| Deployment (prepared) | Vercel (frontend), Render (backend) |
 
 ## Repository layout
 
@@ -212,7 +214,7 @@ CIVICSAATHI-AI/
 │   │   ├── routes/                # health, system, schemes, eligibility, documents, assistant
 │   │   ├── services/              # rules, readiness, document pipeline, Gemini, assistant RAG
 │   │   └── main.py                # FastAPI entrypoint
-│   ├── tests/                     # 235 unit/API tests + gated integration tests
+│   ├── tests/                     # 247 unit/API tests + gated integration tests
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── README.md
@@ -236,6 +238,7 @@ CIVICSAATHI-AI/
 │   ├── DAY_4_GEMINI.md
 │   ├── DAY_5_INTEGRATION.md
 │   ├── DEMO_READINESS.md
+│   ├── DEPLOYMENT.md
 │   └── screenshots/
 └── README.md
 ```
@@ -462,15 +465,16 @@ npm test
 npm run build
 ```
 
-Current Day 5.1 result: **235 backend tests pass** with 3 gated integration
-tests skipped, **20 frontend tests pass**, Ruff and Oxlint are clean, EN/ML/HI
-catalogs have identical 640-key sets and the Vite production build completes.
-Gemini is mocked in the default suite; the two opt-in live checks were retried
-but remained blocked by intermittent outbound TLS timeouts, so live validation
-is not claimed as passing. No prompt, answer or key is logged. Screenshots of
-the Day 1/2 shell were verified at 1440 px and 390 px in all three languages
-with zero horizontal overflow; Day 5/5.1 layouts are covered by tests and a
-production build, not manual browser inspection.
+Current Day 6 result: **247 backend tests pass** with 3 gated integration tests
+skipped, **23 frontend tests pass**, Ruff and Oxlint are clean, EN/ML/HI catalogs
+have identical 640-key sets and the Vite production build completes. Backend
+startup without Gemini, production CORS guards, persistent path resolution and
+deployment configuration are covered by tests. A production build configured
+with `VITE_API_BASE_URL=https://api.example.com` contained no localhost
+reference. Gemini is mocked in the default suite; live checks remain blocked by
+intermittent outbound TLS timeouts, so live validation is not claimed as
+passing. No prompt, answer or key is logged. Day 6 made no claim of manual
+browser verification or deployment success.
 
 ## Roadmap
 
@@ -481,24 +485,28 @@ production build, not manual browser inspection.
 | 3 | Document intelligence | PDF upload/extraction, page-aware chunking, multilingual embeddings, ChromaDB retrieval with page citations |
 | 4 | Evidence-backed assistant | Complete: Gemini RAG in EN/ML/HI with validated page citations |
 | 5 | Trilingual journey | Complete: connected EN/ML/HI journey with honest states and source inspection |
-| 6 | Hardening | Evaluation set, failure-mode tests, accessibility and performance |
+| 6 | Production readiness | Prepared: env/CORS/storage guards, Vercel SPA config and deployment runbook |
 | 7 | Deploy & demo | Vercel + Render deployment, demo script, submission assets |
 
 ## Deployment notes
 
-The project is not deployed yet. When it is:
+The project is **not deployed yet**. Deployment is prepared but requires
+Render/Vercel credentials and account access. See
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the complete runbook.
 
 - **Frontend (Vercel):** root `frontend`, build `npm run build`, output `dist`,
-  environment `VITE_API_BASE_URL=https://<backend-host>`. Configure an SPA
-  rewrite to `index.html` if the host does not handle client-side routes.
-- **Backend (Render):** root `backend`, Python 3.12, build
+  environment `VITE_API_BASE_URL=https://<backend-host>`. `frontend/vercel.json`
+  supplies the SPA deep-link rewrite.
+- **Backend (Render):** root `backend`, build
   `pip install -r requirements.txt`, start
-  `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, environment
-  `ENVIRONMENT=production` and the relevant secrets.
-- Update `CORS_ORIGINS` on the backend to the deployed frontend origin.
-- Mount a persistent disk for `CHROMA_PERSIST_DIR` and `DOCUMENT_STORAGE_DIR`
-  (or replace ChromaDB with a managed vector store); allow time and disk for the
-  embedding model on first boot.
+  `uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1`, environment
+  `ENVIRONMENT=production` and the relevant backend-only secrets.
+- Set exact HTTPS `CORS_ORIGINS`; wildcards are rejected, and production requires
+  HTTPS origins.
+- Mount a persistent disk and set `PERSISTENT_DATA_DIR` to an absolute path such
+  as `/data/civicsaathi`. Existing local ChromaDB/registry data is not
+  automatically migrated; allow time and disk for the embedding model on first
+  boot.
 - Set `GEMINI_API_KEY` and, if needed, `GEMINI_MODEL` as backend environment
   secrets. Never add them to `VITE_*` variables or the browser bundle.
 

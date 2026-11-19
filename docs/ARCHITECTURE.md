@@ -1,6 +1,6 @@
 # Architecture — CIVICSAATHI AI
 
-**Status:** Day 5.1 stabilisation · **Version:** 0.2.0
+**Status:** Day 6 deployment preparation · **Version:** 0.2.0
 **Last updated:** 19 November 2026
 
 This document explains how the system is put together, which boundaries exist
@@ -979,9 +979,10 @@ tiny in-memory PDFs, so they need no model download or network.
 | `tests/test_assistant_api.py` | Ask endpoint, validation, filters, error codes and no history |
 | `tests/test_day5_integration.py` | Cross-module scheme/eligibility and document/assistant contracts, indexed filtering, stale selection and fabricated-metadata rejection |
 | `tests/test_startup_configuration.py` | Real lifespan startup with and without the optional Gemini key |
+| `tests/test_deployment_config.py` | Production CORS, persistent-path resolution and storage-failure guards |
 | `tests/integration/test_gemini_integration.py` | Gated LIVE Gemini answer and document-filtered multilingual checks |
 
-Result: **235 passed, 3 skipped** in the default run (the gated real-model
+Result: **247 passed, 3 skipped** in the default run (the gated real-model
 document test and the two gated live Gemini tests). With
 `CIVICSAATHI_RUN_MODEL_TESTS=1`, the document test uses
 `intfloat/multilingual-e5-small` from the local Hugging Face cache. With
@@ -991,7 +992,8 @@ test is needed for the default suite. Day 5.1 fixed a typed-schema serialisation
 defect found during the live probe, but repeated live checks still timed out in
 the outbound TLS handshake or read before a provider response, so live
 validation is recorded as unavailable rather than passing. See
-[`DEMO_READINESS.md`](DEMO_READINESS.md) for the safe connectivity findings.
+[`DEMO_READINESS.md`](DEMO_READINESS.md) for the safe connectivity findings and
+[`DEPLOYMENT.md`](DEPLOYMENT.md) for the production runbook.
 
 Also enforced:
 
@@ -999,7 +1001,7 @@ Also enforced:
 - Oxlint for the frontend.
 - Vitest component and integration tests for the assistant UI, dashboard,
   scheme context, document handoff, citation recovery and language behaviour;
-  20 frontend tests pass in the default run.
+  23 frontend tests pass in the default run.
 - Vite production build, which catches import and bundling errors.
 - Catalogue key parity: EN, ML and HI contain identical flattened key sets,
   enforced by a committed Vitest test (640 keys after Day 5).

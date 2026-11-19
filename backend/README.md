@@ -209,7 +209,7 @@ Settings are defined in `app/core/config.py` and loaded from `backend/.env`.
 | --- | --- | --- |
 | `ENVIRONMENT` | `development` | `development`, `staging` or `production` |
 | `LOG_LEVEL` | `INFO` | Python logging level |
-| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated browser origins |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Explicit comma-separated browser origins; wildcards rejected, production requires HTTPS |
 | `GEMINI_API_KEY` | empty | Server-side Gemini key; empty disables assistant answers |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model identifier |
 | `ASSISTANT_TOP_K` | `5` | Passages retrieved before the evidence gate |
@@ -220,9 +220,10 @@ Settings are defined in `app/core/config.py` and loaded from `backend/.env`.
 | `ASSISTANT_MAX_OUTPUT_TOKENS` | `900` | Generation cap |
 | `SUPABASE_URL` | empty | Supabase project URL (deferred) |
 | `SUPABASE_SERVICE_ROLE_KEY` | empty | Server-only service role key |
-| `CHROMA_PERSIST_DIR` | `backend/.chroma` | Persistent ChromaDB directory |
+| `PERSISTENT_DATA_DIR` | unset | Absolute persistent-disk root; production requires this or both absolute storage overrides |
+| `CHROMA_PERSIST_DIR` | `backend/.chroma` | Persistent ChromaDB directory; derived from `PERSISTENT_DATA_DIR/chroma` when set |
 | `DOCUMENT_COLLECTION_NAME` | `civicsaathi_government_documents` | Chroma collection |
-| `DOCUMENT_STORAGE_DIR` | `backend/data/documents` | Server-only PDF and registry directory |
+| `DOCUMENT_STORAGE_DIR` | `backend/data/documents` | Server-only PDF/registry directory; derived from `PERSISTENT_DATA_DIR/documents` when set |
 | `DOCUMENT_MAX_UPLOAD_BYTES` | `10485760` | Upload size cap in bytes |
 | `DOCUMENT_MAX_PAGES` | `100` | Page cap per PDF |
 | `DOCUMENT_CHUNK_CHARS` | `1200` | Target passage length |
@@ -243,7 +244,8 @@ readiness reports `not_configured` and `/api/v1/assistant/ask` returns
 `503 assistant_not_configured` while every other module stays available.
 Full Day 4 configuration and validation details are in
 [`docs/DAY_4_GEMINI.md`](../docs/DAY_4_GEMINI.md); the Day 5.1 manual checklist
-is in [`docs/DEMO_READINESS.md`](../docs/DEMO_READINESS.md).
+is in [`docs/DEMO_READINESS.md`](../docs/DEMO_READINESS.md), and the production
+runbook is in [`docs/DEPLOYMENT.md`](../docs/DEPLOYMENT.md).
 
 ## Tests and lint
 
@@ -253,7 +255,7 @@ python -m ruff check app tests
 python -m ruff format --check app tests
 ```
 
-**235 unit/API tests pass and 3 integration tests are skipped by default.**
+**247 unit/API tests pass and 3 integration tests are skipped by default.**
 The gated tests are opt-in so no routine test depends on a model download or a
 paid Gemini call:
 
@@ -290,7 +292,9 @@ The suite covers:
   payload, indexed-only filtering and `needs_ocr`, document-filtered citations,
   stale selection recovery and fabricated citation-metadata rejection;
 - Day 5.1 real lifespan startup with and without a Gemini key, plus the typed
-  SDK schema serialisation used by the live provider.
+  SDK schema serialisation used by the live provider;
+- Day 6 production CORS guards, persistent-storage path resolution and
+  fail-fast behavior when production storage is not explicitly configured.
 
 Unit tests use deterministic injectable `FakeEmbedder` and `FakeGemini` peers
 with tiny in-memory PDFs, so they need neither the neural model nor a network.
