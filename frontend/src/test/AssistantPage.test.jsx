@@ -335,4 +335,59 @@ describe('AssistantPage', () => {
     )
     await screen.findByText('Malayalam answer from the same passage.')
   })
+
+  it.each([
+    ['gemini_unavailable', 'The AI service is temporarily unavailable'],
+    ['gemini_rate_limited', 'The AI service is busy'],
+    ['gemini_timeout', 'The AI service took too long'],
+    ['assistant_not_configured', 'The assistant is not configured'],
+    ['timeout', 'The request took too long'],
+    ['network_error', 'Cannot reach the assistant'],
+  ])('maps %s to localized, safe copy', async (code, title) => {
+    const rawProviderText = 'ServerError 503 internal-provider-detail'
+    askAssistant.mockRejectedValueOnce({ code, message: rawProviderText })
+    renderPage()
+    ask()
+
+    await waitFor(() => expect(screen.getByText(title)).toBeTruthy())
+    expect(screen.queryByText(rawProviderText)).toBeNull()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy()
+  })
+
+  it('falls back to the safe API message for an unknown code', async () => {
+    askAssistant.mockRejectedValueOnce({
+      code: 'http_500',
+      message: 'The API returned an unexpected 500 response.',
+    })
+    renderPage()
+    ask()
+
+    await waitFor(() =>
+      expect(screen.getByText('The assistant could not answer')).toBeTruthy(),
+    )
+    expect(
+      screen.getByText('The API returned an unexpected 500 response.'),
+    ).toBeTruthy()
+  })
+
+  it('retries the last question after a mapped outage error', async () => {
+    askAssistant
+      .mockRejectedValueOnce({
+        code: 'gemini_unavailable',
+        message: 'ServerError 503 internal-provider-detail',
+      })
+      .mockResolvedValueOnce(grounded)
+    renderPage()
+    ask('What documents are required?')
+
+    await screen.findByText('The AI service is temporarily unavailable')
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await screen.findByText(grounded.answer)
+    expect(askAssistant).toHaveBeenCalledTimes(2)
+    expect(askAssistant.mock.calls[1][0]).toEqual({
+      question: 'What documents are required?',
+      language: 'en',
+      document_id: null,
+    })
+  })
 })

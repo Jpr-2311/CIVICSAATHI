@@ -818,6 +818,24 @@ const en = {
     insufficientCopy: 'Please upload the relevant official document and ask again.',
     errorTitle: 'The assistant could not answer',
     errorCopy: 'Something went wrong while preparing a grounded answer.',
+    errorUnavailableTitle: 'The AI service is temporarily unavailable',
+    errorUnavailableCopy:
+      'Gemini did not respond after a few attempts. Please wait a moment and try again.',
+    errorRateLimitedTitle: 'The AI service is busy',
+    errorRateLimitedCopy:
+      'Too many requests reached Gemini. Please wait a few seconds and try again.',
+    errorTimeoutTitle: 'The AI service took too long',
+    errorTimeoutCopy:
+      'Gemini did not finish in time. Please try again in a moment.',
+    errorNotConfiguredTitle: 'The assistant is not configured',
+    errorNotConfiguredCopy:
+      'This deployment is missing its Gemini API key. An administrator must set GEMINI_API_KEY on the server.',
+    errorClientTimeoutTitle: 'The request took too long',
+    errorClientTimeoutCopy:
+      'The assistant is still working or the connection timed out. Please try again.',
+    errorNetworkTitle: 'Cannot reach the assistant',
+    errorNetworkCopy:
+      'Check your internet connection and that the CIVICSAATHI API is running, then try again.',
     retry: 'Try again',
     reset: 'New question',
     suggestionsTitle: 'Try asking',

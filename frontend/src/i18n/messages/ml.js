@@ -836,6 +836,24 @@ const ml = {
     insufficientCopy: 'ബന്ധപ്പെട്ട ഔദ്യോഗിക രേഖ അപ്ലോഡ് ചെയ്ത് വീണ്ടും ചോദിക്കുക.',
     errorTitle: 'സഹായിക്ക് ഉത്തരം നൽകാൻ കഴിഞ്ഞില്ല',
     errorCopy: 'വിശ്വസനീയമായ ഉത്തരം തയ്യാറാക്കുന്നതിനിടെ ഒരു പ്രശ്നം ഉണ്ടായി.',
+    errorUnavailableTitle: 'AI സേവനം താൽക്കാലികമായി ലഭ്യമല്ല',
+    errorUnavailableCopy:
+      'കുറച്ച് ശ്രമങ്ങൾക്ക് ശേഷവും Gemini പ്രതികരിച്ചില്ല. അൽപ്പസമയം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.',
+    errorRateLimitedTitle: 'AI സേവനം തിരക്കിലാണ്',
+    errorRateLimitedCopy:
+      'Gemini-യിൽ ആവശ്യപ്പെട്ടതിലധികം അഭ്യർത്ഥനകൾ എത്തി. കുറച്ച് സെക്കൻഡ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.',
+    errorTimeoutTitle: 'AI സേവനം സമയം കവിഞ്ഞു',
+    errorTimeoutCopy:
+      'Gemini സമയബന്ധിതമായി പൂർത്തിയാക്കിയില്ല. അൽപ്പസമയം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.',
+    errorNotConfiguredTitle: 'സഹായി ക്രമീകരിച്ചിട്ടില്ല',
+    errorNotConfiguredCopy:
+      'ഈ ഡിപ്ലോയ്മെന്റിൽ Gemini API കീ ഇല്ല. സെർവറിൽ GEMINI_API_KEY ക്രമീകരിക്കണം.',
+    errorClientTimeoutTitle: 'അഭ്യർത്ഥന സമയം കവിഞ്ഞു',
+    errorClientTimeoutCopy:
+      'സഹായി ഇപ്പോഴും പ്രവർത്തിക്കുന്നുണ്ടാകാം, അല്ലെങ്കിൽ കണക്ഷൻ സമയം കവിഞ്ഞു. വീണ്ടും ശ്രമിക്കുക.',
+    errorNetworkTitle: 'സഹായിയിൽ എത്തിച്ചേരാനായില്ല',
+    errorNetworkCopy:
+      'ഇന്റർനെറ്റ് കണക്ഷനും CIVICSAATHI API പ്രവർത്തിക്കുന്നുണ്ടെന്നും പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.',
     retry: 'വീണ്ടും ശ്രമിക്കുക',
     reset: 'പുതിയ ചോദ്യം',
     suggestionsTitle: 'ഇങ്ങനെ ചോദിക്കാം',

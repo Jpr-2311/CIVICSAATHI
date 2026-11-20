@@ -63,6 +63,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         model=settings.gemini_model,
         timeout=settings.assistant_request_timeout_seconds,
         max_output_tokens=settings.assistant_max_output_tokens,
+        max_attempts=settings.assistant_max_attempts,
+        retry_budget_seconds=settings.assistant_retry_budget_seconds,
+        retry_backoff_budget_seconds=settings.assistant_retry_backoff_budget_seconds,
+        retry_base_delay_seconds=settings.assistant_retry_base_delay_seconds,
+        retry_max_delay_seconds=settings.assistant_retry_max_delay_seconds,
     )
     app.state.assistant_service = AssistantService(
         document_service=app.state.document_service,

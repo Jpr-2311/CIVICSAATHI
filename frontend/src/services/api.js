@@ -9,6 +9,20 @@ export const API_PREFIX = '/api/v1'
 export const apiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL)
 export const isApiBaseConfigured = Boolean(apiBaseUrl)
 
+// The assistant route retrieves evidence and may make several provider
+// attempts, so it uses its own timeout. Other routes keep the shared default.
+// The fallback covers the current 270s backend retry budget with overhead.
+const DEFAULT_ASSISTANT_TIMEOUT_MS = 300000
+
+function resolveAssistantTimeoutMs() {
+  const configured = Number(import.meta.env.VITE_ASSISTANT_TIMEOUT_MS)
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : DEFAULT_ASSISTANT_TIMEOUT_MS
+}
+
+export const assistantTimeoutMs = resolveAssistantTimeoutMs()
+
 const api = axios.create({
   baseURL: apiBaseUrl,
   timeout: 12000,
@@ -209,7 +223,7 @@ export function askAssistant(payload, options = {}) {
     method: 'post',
     data: payload,
     signal: options.signal,
-    timeout: 45000,
+    timeout: assistantTimeoutMs,
   })
 }
 

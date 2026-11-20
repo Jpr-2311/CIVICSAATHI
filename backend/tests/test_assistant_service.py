@@ -12,6 +12,7 @@ from app.services.assistant_errors import (
     GeminiError,
     GeminiRateLimitError,
     GeminiTimeoutError,
+    GeminiUnavailableError,
 )
 
 
@@ -174,6 +175,7 @@ def test_gemini_errors_propagate_as_safe_errors(tmp_path):
         (GeminiError("boom"), GeminiError),
         (GeminiTimeoutError("slow"), GeminiTimeoutError),
         (GeminiRateLimitError("busy"), GeminiRateLimitError),
+        (GeminiUnavailableError("busy"), GeminiUnavailableError),
     ]
     for error, expected in cases:
         service, _ = build_assistant(tmp_path / expected.__name__, FakeGemini(error))

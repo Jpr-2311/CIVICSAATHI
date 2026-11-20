@@ -27,6 +27,31 @@ import { askAssistant, listDocuments, toApiError } from '@/services/api'
 
 const TRUST_ICONS = [ShieldCheck, Languages, CircleCheck]
 
+// Known safe error codes mapped to localized copy. Codes outside this allowlist
+// fall back to the API's fixed message, then to the generic assistant copy.
+const ASSISTANT_ERROR_KEYS = {
+  gemini_unavailable: 'errorUnavailable',
+  gemini_rate_limited: 'errorRateLimited',
+  gemini_timeout: 'errorTimeout',
+  assistant_not_configured: 'errorNotConfigured',
+  timeout: 'errorClientTimeout',
+  network_error: 'errorNetwork',
+}
+
+function resolveAssistantError(error, copy) {
+  const prefix = ASSISTANT_ERROR_KEYS[error?.code]
+  if (prefix) {
+    return {
+      title: copy.assistant[`${prefix}Title`],
+      body: copy.assistant[`${prefix}Copy`],
+    }
+  }
+  return {
+    title: copy.assistant.errorTitle,
+    body: error?.message || copy.assistant.errorCopy,
+  }
+}
+
 export default function AssistantPage() {
   const { language, setLanguage, t } = useLanguage()
   const copy = useMessages()
@@ -194,6 +219,7 @@ export default function AssistantPage() {
   }
 
   const visibleResult = result
+  const errorView = error ? resolveAssistantError(error, copy) : null
 
   return (
     <div>
@@ -358,11 +384,11 @@ export default function AssistantPage() {
                     aria-hidden="true"
                   />
                   <p className="text-sm font-semibold text-rose-900">
-                    {copy.assistant.errorTitle}
+                    {errorView.title}
                   </p>
                 </div>
                 <p className="mt-1.5 text-xs leading-relaxed text-ink-600">
-                  {copy.assistant.errorCopy}
+                  {errorView.body}
                 </p>
                 <Button
                   type="button"

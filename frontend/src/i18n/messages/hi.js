@@ -821,6 +821,24 @@ const hi = {
     insufficientCopy: 'कृपया संबंधित आधिकारिक दस्तावेज़ अपलोड करें और फिर पूछें।',
     errorTitle: 'सहायक जवाब नहीं दे सका',
     errorCopy: 'विश्वसनीय जवाब तैयार करते समय एक समस्या हुई।',
+    errorUnavailableTitle: 'AI सेवा अस्थायी रूप से उपलब्ध नहीं है',
+    errorUnavailableCopy:
+      'कुछ प्रयासों के बाद भी Gemini से जवाब नहीं आया। थोड़ी देर रुककर फिर कोशिश करें।',
+    errorRateLimitedTitle: 'AI सेवा व्यस्त है',
+    errorRateLimitedCopy:
+      'Gemini पर बहुत ज़्यादा अनुरोध पहुँचे। कुछ सेकंड रुककर फिर कोशिश करें।',
+    errorTimeoutTitle: 'AI सेवा में बहुत समय लगा',
+    errorTimeoutCopy:
+      'Gemini ने समय पर काम पूरा नहीं किया। थोड़ी देर बाद फिर कोशिश करें।',
+    errorNotConfiguredTitle: 'सहायक कॉन्फ़िगर नहीं है',
+    errorNotConfiguredCopy:
+      'इस डिप्लॉयमेंट में Gemini API कुंजी नहीं है। सर्वर पर GEMINI_API_KEY सेट करना होगा।',
+    errorClientTimeoutTitle: 'अनुरोध में बहुत समय लगा',
+    errorClientTimeoutCopy:
+      'सहायक अब भी काम कर रहा हो सकता है, या कनेक्शन का समय समाप्त हो गया। फिर कोशिश करें।',
+    errorNetworkTitle: 'सहायक तक नहीं पहुँच सके',
+    errorNetworkCopy:
+      'अपना इंटरनेट कनेक्शन और CIVICSAATHI API जाँचें, फिर कोशिश करें।',
     retry: 'फिर कोशिश करें',
     reset: 'नया सवाल',
     suggestionsTitle: 'ऐसे पूछ सकते हैं',

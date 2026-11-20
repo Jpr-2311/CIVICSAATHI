@@ -83,6 +83,74 @@ class Settings(BaseSettings):
     assistant_max_context_chars: int = 12000
     assistant_request_timeout_seconds: float = 30.0
     assistant_max_output_tokens: int = 900
+    # Bounded transport retries for transient provider failures. All values are
+    # seconds. ``assistant_request_timeout_seconds`` is the per-attempt HTTP
+    # timeout (converted to SDK milliseconds); the retry budget bounds the full
+    # sequence and the backoff budget bounds cumulative sleep time.
+    assistant_max_attempts: int = 3
+    assistant_retry_budget_seconds: float = 270.0
+    assistant_retry_backoff_budget_seconds: float = 10.0
+    assistant_retry_base_delay_seconds: float = 0.25
+    assistant_retry_max_delay_seconds: float = 2.0
+
+    @field_validator("assistant_retry_budget_seconds")
+    @classmethod
+    def validate_retry_budget(cls, value: float) -> float:
+        """Keep the overall retry budget finite and bounded."""
+        if not 1 <= value <= 900:
+            raise ValueError(
+                "ASSISTANT_RETRY_BUDGET_SECONDS must be between 1 and 900."
+            )
+        return value
+
+    @field_validator("assistant_retry_backoff_budget_seconds")
+    @classmethod
+    def validate_backoff_budget(cls, value: float) -> float:
+        """Keep cumulative backoff sleep finite and bounded."""
+        if not 0 <= value <= 60:
+            raise ValueError(
+                "ASSISTANT_RETRY_BACKOFF_BUDGET_SECONDS must be between 0 and 60."
+            )
+        return value
+
+    @field_validator("assistant_max_attempts")
+    @classmethod
+    def validate_max_attempts(cls, value: int) -> int:
+        """Keep the total attempt count small and bounded."""
+        if not 1 <= value <= 5:
+            raise ValueError("ASSISTANT_MAX_ATTEMPTS must be between 1 and 5.")
+        return value
+
+    @field_validator(
+        "assistant_retry_base_delay_seconds", "assistant_retry_max_delay_seconds"
+    )
+    @classmethod
+    def validate_retry_delays(cls, value: float) -> float:
+        """Reject negative or unbounded retry delays."""
+        if not 0 <= value <= 30:
+            raise ValueError("Gemini retry delays must be between 0 and 30 seconds.")
+        return value
+
+    @model_validator(mode="after")
+    def validate_retry_policy(self) -> "Settings":
+        """Ensure one attempt cannot consume the whole retry budget."""
+        if (
+            self.assistant_retry_budget_seconds
+            <= self.assistant_request_timeout_seconds
+        ):
+            raise ValueError(
+                "ASSISTANT_RETRY_BUDGET_SECONDS must exceed "
+                "ASSISTANT_REQUEST_TIMEOUT_SECONDS."
+            )
+        if (
+            self.assistant_retry_base_delay_seconds
+            > self.assistant_retry_max_delay_seconds
+        ):
+            raise ValueError(
+                "ASSISTANT_RETRY_BASE_DELAY_SECONDS must not exceed "
+                "ASSISTANT_RETRY_MAX_DELAY_SECONDS."
+            )
+        return self
 
     @field_validator("cors_origins")
     @classmethod

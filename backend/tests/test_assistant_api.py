@@ -149,11 +149,13 @@ def test_provider_errors_map_to_safe_status_codes(assistant_clients):
         GeminiError,
         GeminiRateLimitError,
         GeminiTimeoutError,
+        GeminiUnavailableError,
     )
 
     cases = [
         (GeminiRateLimitError("busy"), 429, "gemini_rate_limited"),
         (GeminiTimeoutError("slow"), 504, "gemini_timeout"),
+        (GeminiUnavailableError("busy"), 503, "gemini_unavailable"),
         (GeminiError("failed"), 502, "gemini_error"),
     ]
     for error, status, code in cases:
@@ -162,6 +164,39 @@ def test_provider_errors_map_to_safe_status_codes(assistant_clients):
         assert response.status_code == status, response.text
         assert response.json()["code"] == code
         assert "Traceback" not in response.text
+
+
+def test_unavailable_provider_error_does_not_expose_raw_text(assistant_clients):
+    from google.genai.errors import ServerError
+
+    from app.services.assistant_errors import GeminiUnavailableError
+    from app.services.gemini_client import GeminiService
+
+    raw_detail = "provider-secret-detail"
+    mapped = GeminiService._map_error(
+        ServerError(
+            503,
+            {
+                "error": {
+                    "code": 503,
+                    "status": "UNAVAILABLE",
+                    "message": raw_detail,
+                }
+            },
+        )
+    )
+
+    assert isinstance(mapped, GeminiUnavailableError)
+    assert mapped.status_code == 503
+    assert mapped.code == "gemini_unavailable"
+    assert raw_detail not in str(mapped)
+
+    client, _, _ = assistant_clients(mapped)
+    response = client.post(ASK_URL, json={"question": "farmer support"})
+    assert response.status_code == 503
+    assert response.json()["code"] == "gemini_unavailable"
+    assert raw_detail not in response.text
+    assert "Traceback" not in response.text
 
 
 def test_no_history_is_persisted(assistant_clients):
