@@ -1,0 +1,126 @@
+flowchart TB
+%% CIVICSAATHI AI — implemented system architecture.
+%% Baseline: commit 4288454. Local development only; not deployed.
+%% Solid borders = implemented. Dashed borders = planned/deferred.
+%% Cylinder shapes = persistent storage. Purple = third-party external dependency.
+  classDef user fill:#0f172a,stroke:#0f172a,color:#ffffff
+  classDef frontend fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef client fill:#f0fdfa,stroke:#0f766e,color:#134e4a
+  classDef backend fill:#fef3c7,stroke:#b45309,color:#78350f
+  classDef validation fill:#ffe4e6,stroke:#be123c,color:#881337
+  classDef external fill:#fae8ff,stroke:#a21caf,color:#701a75
+  classDef storage fill:#dcfce7,stroke:#15803d,color:#14532d
+  classDef deferred fill:#f1f5f9,stroke:#64748b,color:#334155,stroke-dasharray: 6 4
+
+  subgraph USER["1 · User interaction"]
+    CIT["Citizen<br/>English · Malayalam · Hindi<br/>desktop and mobile browser"]:::user
+  end
+
+  subgraph FRONT["2 · React + Vite frontend — implemented · local only"]
+    ROUTES["React Router 7<br/>landing · dashboard · schemes · detail<br/>eligibility · documents · assistant"]:::frontend
+    I18N["LanguageProvider<br/>EN / ML / HI catalogs<br/>language preference in localStorage"]:::frontend
+    SHELL["AppShell snapshot<br/>health + readiness + system info<br/>30 s poll while the tab is visible"]:::frontend
+  end
+
+  subgraph CLIENT["3 · API service layer — browser"]
+    APIL["Axios service<br/>VITE_API_BASE_URL · no localhost fallback<br/>12 s default · 300 s assistant timeout<br/>cancellation · normalized ApiError"]:::client
+  end
+
+  subgraph BACK["4 · FastAPI backend — implemented · local only"]
+    ROUTER["HTTP routes under /api/v1<br/>health · system · schemes · eligibility<br/>documents · assistant"]:::backend
+    HANDLERS["Typed error handlers<br/>422 validation · 503 dataset<br/>PDF / document / assistant envelopes"]:::validation
+
+    subgraph DOMAIN["5 · Scheme discovery + deterministic eligibility"]
+      SCHEME["SchemeService<br/>localized list + detail"]:::backend
+      ELIG["EligibilityService<br/>evaluate every curated scheme"]:::backend
+      ENGINE["Three-valued rules engine<br/>pass · fail · unknown<br/>DNF: any_of groups of all_of"]:::backend
+    end
+
+    subgraph INGEST["6 · PDF ingestion pipeline"]
+      DOCS["DocumentService<br/>ingest · search · delete"]:::backend
+      PDF["PDF validation + extraction<br/>%PDF- header · PyMuPDF<br/>10 MB · 100 pages · SHA-256"]:::backend
+      CHUNK["Page-aware chunker<br/>1200 chars · 200 overlap<br/>exactly one page per chunk"]:::backend
+    end
+
+    subgraph RAG["7 · Evidence retrieval + grounded assistant"]
+      GATE["Evidence gate<br/>similarity ≥ 0.30<br/>≤ 5 chunks · ≤ 12k context chars"]:::backend
+      PROMPT["Bounded prompt<br/>system rules + delimited evidence"]:::backend
+      ASSIST["AssistantService<br/>orchestration · no history stored"]:::backend
+      VALID["10 · Response + citation validation<br/>strict JSON schema · language match<br/>backend rebuilds citation metadata"]:::validation
+      INSUFF["Localized insufficient-evidence response<br/>HTTP 200 · zero citations"]:::backend
+    end
+  end
+
+  subgraph DATA["8 · Persistent storage — server-side only"]
+    REPO[("Curated scheme dataset<br/>data/sample_schemes/schemes.json<br/>15 schemes · 53 conditions · version 3")]:::storage
+    CHROMA[("ChromaDB PersistentClient<br/>cosine · civicsaathi_government_documents<br/>vectors + page metadata")]:::storage
+    REG[("Document registry + PDF files<br/>index.json + uuid.pdf<br/>atomic writes")]:::storage
+  end
+
+  subgraph EXT["External services and third-party models"]
+    EMB["intfloat/multilingual-e5-small<br/>sentence-transformers · lazy load<br/>runs in-process · model files cache locally"]:::external
+    GEM["9 · Google Gemini API<br/>google-genai · JSON output schema<br/>temperature 0 · bounded output tokens"]:::external
+    RETRY["12 · Bounded retry + safe errors<br/>429 / 503 / 504 only · 3 attempts<br/>270 s total budget · 10 s backoff budget<br/>Retry-After capped · no nested SDK retries"]:::validation
+  end
+
+  subgraph DEFERRED["Planned / deferred — not active"]
+    SUPA["Supabase PostgreSQL<br/>NOT integrated<br/>validated JSON repository is active"]:::deferred
+    DEPLOY["Render + Vercel<br/>configuration prepared<br/>NOT deployed"]:::deferred
+    FUTURE["Accounts · chat history · OCR<br/>NOT implemented"]:::deferred
+  end
+
+  MULTI["11 · Multilingual response layer<br/>language en | ml | hi<br/>localized records, rules and messages"]:::backend
+
+  CIT --> ROUTES
+  I18N -.->|"UI language and copy"| ROUTES
+  ROUTES --> APIL
+  SHELL --> APIL
+  APIL -->|"REST /api/v1<br/>JSON + multipart"| ROUTER
+
+  ROUTER --> SCHEME
+  ROUTER --> ELIG
+  ROUTER --> DOCS
+  ROUTER --> ASSIST
+  ROUTER -.->|"typed exception"| HANDLERS
+
+  SCHEME -->|"validated records"| REPO
+  ELIG --> ENGINE
+  ELIG -->|"validated dataset"| REPO
+  ENGINE -->|"conditions resolved by id"| REPO
+
+  DOCS --> PDF
+  PDF -->|"pages + checksum"| CHUNK
+  CHUNK -->|"page-scoped passages"| DOCS
+  DOCS -->|"embed passages or query"| EMB
+  EMB -->|"normalized vectors"| CHROMA
+  DOCS -->|"upsert · query · delete"| CHROMA
+  DOCS -->|"registry record + stored PDF"| REG
+
+  ASSIST -->|"search(question, top_k, document_id)"| DOCS
+  DOCS -->|"retrieved passages + distances"| GATE
+  GATE -->|"viable evidence"| PROMPT
+  GATE -->|"no viable evidence"| INSUFF
+  PROMPT --> GEM
+  GEM -->|"raw JSON: answer + evidence ids"| VALID
+  VALID -->|"valid answer + rebuilt citations"| ASSIST
+  VALID -->|"invalid: one corrective turn"| PROMPT
+  VALID -->|"still invalid"| INSUFF
+  INSUFF --> ASSIST
+
+  GEM -.->|"429 / 503 / 504"| RETRY
+  RETRY -.->|"retry while budget remains"| GEM
+  RETRY -.->|"exhausted"| HANDLERS
+  HANDLERS -.->|"safe { detail, code }"| APIL
+
+  I18N -.->|"requested language"| APIL
+  APIL -.->|"language field or query"| ROUTER
+  ROUTER -.-> MULTI
+  MULTI -.-> SCHEME
+  MULTI -.-> ELIG
+  MULTI -.-> ASSIST
+  MULTI -.-> APIL
+
+  SUPA -.->|"future implementation behind the repository seam"| REPO
+
+  %% Deployment, authentication and OCR are intentionally not connected:
+  %% they are not part of the running system.

@@ -212,7 +212,7 @@ Primary Day 7 changes:
 - `docs/FINAL_VERIFICATION.md` — this record.
 - `docs/DEPLOYMENT.md` — Day 7 deployment status and credential limitations.
 - `docs/screenshots/*.png` — genuine local screenshots.
-- `docs/ARCHITECTURE.md` — status header updated to Day 7.
+- `docs/architecture.md` — status header updated to Day 7.
 
 The Day 7 commit is separate from the prior Day 6 commit. The final handoff
 reports its hash and the final working-tree status.

@@ -8,7 +8,7 @@
 This document records the Day 2.1 audit of the scheme catalogue. It is the
 companion to the dataset policy in
 [`data/sample_schemes/README.md`](../data/sample_schemes/README.md) and the
-system design in [`ARCHITECTURE.md`](ARCHITECTURE.md).
+system design in [`architecture.md`](architecture.md).
 
 A follow-up verification of the PM-JAY citizenship condition was performed
 after this audit was committed; its evidence and decision are recorded in

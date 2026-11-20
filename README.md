@@ -214,7 +214,7 @@ record is in [`docs/FINAL_VERIFICATION.md`](docs/FINAL_VERIFICATION.md).
 
 Read the grounded-generation design in
 [`docs/DAY_4_GEMINI.md`](docs/DAY_4_GEMINI.md), the full design in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the
+[`docs/architecture.md`](docs/architecture.md) and the
 dataset policy in
 [`data/sample_schemes/README.md`](data/sample_schemes/README.md).
 
@@ -263,7 +263,7 @@ CIVICSAATHI-AI/
 │   ├── schemes.json               # 15 verified schemes and 53 conditions
 │   └── README.md                  # dataset, rule and source policy
 ├── docs/
-│   ├── ARCHITECTURE.md
+│   ├── architecture.md
 │   ├── DAY_4_GEMINI.md
 │   ├── DAY_5_INTEGRATION.md
 │   ├── DEMO_READINESS.md

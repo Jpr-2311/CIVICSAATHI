@@ -1,0 +1,88 @@
+sequenceDiagram
+  %% CIVICSAATHI AI — evidence-grounded assistant request.
+  %% Baseline: commit 4288454. No live Gemini call is required to read this flow.
+  autonumber
+  actor C as Citizen
+  participant UI as AssistantPage
+  participant API as api.js
+  participant R as FastAPI route
+  participant S as AssistantService
+  participant D as DocumentService
+  participant E as EmbeddingService
+  participant V as ChromaDB
+  participant G as GeminiService
+  participant X as Gemini API
+
+  C->>UI: Ask a question in English / Malayalam / Hindi
+  UI->>API: askAssistant(question, language, document_id)
+  API->>R: POST /api/v1/assistant/ask
+  R->>S: ask(request)
+
+  alt GEMINI_API_KEY is missing
+    S-->>R: AssistantNotConfiguredError
+    R-->>API: 503 { code: assistant_not_configured }
+    API-->>UI: ApiError with a safe code
+    UI-->>C: Localized configuration message + retry
+  else Gemini is configured
+    S->>D: search(question, top_k=5, document_id)
+    D->>E: embed_query("query: ...")
+    E-->>D: normalized query vector
+    D->>V: cosine query with optional document filter
+    V-->>D: top-k passages, metadata and distances
+    D-->>S: passages with distance within the configured maximum
+
+    Note over S,D: Retrieval is the same pipeline used by document search.
+
+    alt No viable evidence
+      S->>S: apply similarity gate ≥ 0.30
+      S-->>R: 200 insufficient_evidence=true
+      R-->>API: localized insufficient response
+      API-->>UI: no citations
+      UI-->>C: "Not enough information" + upload hint
+    else Viable evidence
+      S->>S: assign e1..eN and build a bounded prompt
+      S->>G: generate(system_instruction, prompt)
+
+      Note over G,X: Up to 3 transport attempts. Only 429 / 503 / 504 are retried.
+      G->>X: generateContent with JSON schema, temperature 0
+      alt Transient error and budget remains
+        X-->>G: 429 / 503 / 504 + optional Retry-After
+        G->>G: bounded jittered backoff, then retry
+        G->>X: generateContent again
+        X-->>G: response or error
+      else Success or permanent error
+        X-->>G: raw JSON text or provider error
+      end
+
+      alt Provider error after retries
+        G-->>S: GeminiTimeoutError / GeminiRateLimitError / GeminiUnavailableError / GeminiError
+        S-->>R: typed safe error
+        R-->>API: 504 / 429 / 503 / 502 { detail, code }
+        API-->>UI: localized error + retry
+        UI-->>C: Actionable localized message
+      else JSON returned
+        G-->>S: raw JSON text
+        S->>S: strict parse, language check, citation-id check
+
+        opt Output invalid on the first turn
+          S->>G: corrective generate with CORRECTION_NOTE
+          G-->>S: second JSON text or safe error
+          S->>S: re-validate
+        end
+
+        alt Valid answer
+          S-->>R: answer + backend-built citations
+          R-->>API: 200 JSON
+          API-->>UI: answer + citations
+          UI-->>C: Localized answer + page citations
+        else Unverifiable answer
+          S-->>R: 200 insufficient_evidence=true
+          R-->>API: localized insufficient response
+          API-->>UI: no citations
+          UI-->>C: "Not enough information"
+        end
+      end
+    end
+  end
+
+  Note over API,UI: Every failure is normalized by toApiError, then mapped by the page to localized copy.
