@@ -23,6 +23,20 @@ function resolveAssistantTimeoutMs() {
 
 export const assistantTimeoutMs = resolveAssistantTimeoutMs()
 
+// Document uploads run PDF parsing, embedding and vector indexing before the
+// response, so they need their own timeout. Other routes keep the shared
+// default; the assistant keeps its separate, longer timeout.
+const DEFAULT_DOCUMENT_UPLOAD_TIMEOUT_MS = 300000
+
+function resolveDocumentUploadTimeoutMs() {
+  const configured = Number(import.meta.env.VITE_DOCUMENT_UPLOAD_TIMEOUT_MS)
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : DEFAULT_DOCUMENT_UPLOAD_TIMEOUT_MS
+}
+
+export const documentUploadTimeoutMs = resolveDocumentUploadTimeoutMs()
+
 const api = axios.create({
   baseURL: apiBaseUrl,
   timeout: 12000,
@@ -191,6 +205,7 @@ export function uploadDocument(file, options = {}) {
     data: form,
     signal: options.signal,
     onUploadProgress: options.onUploadProgress,
+    timeout: documentUploadTimeoutMs,
   })
 }
 
